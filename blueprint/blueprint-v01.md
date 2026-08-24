@@ -122,7 +122,7 @@ Estas preguntas del documento original no se respondieron todavía — no bloque
 
 ## 10. Próximos pasos
 
-1. Diseñar el diagrama ER definitivo a partir del modelo simplificado de la sección 5.
+1. ~~Diseñar el diagrama ER definitivo a partir del modelo simplificado de la sección 5.~~ Hecho: ver `blueprint/diagrama-er-v01.md`.
 2. Definir el mecanismo de bloqueo/desbloqueo de edición de programación (2.3) — a nivel de qué (jornada completa, por ruta, por unidad individual).
 3. Cerrar los 4 pendientes de la sección 9 con el área antes de diseñar el módulo de evidencia.
 4. Empezar el diseño del backend Django (modelos, catálogos, autenticación) para el módulo de programación, ya validado conceptualmente por la sub-herramienta de captura.
