@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Captura de programación de rutas — IMSS-Bienestar</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="app-header">
+  <p class="app-header__eyebrow">Programación de rutas de distribución</p>
+  <h1 id="titulo-jornada" class="app-header__title"></h1>
+  <p id="subtitulo-fechas" class="app-header__dates"></p>
+  <p id="etiqueta-distribucion" class="app-header__badge"></p>
+</header>
+
+<main class="wrap">
+
+  <section class="panel" id="panel-entidad">
+    <h2 class="panel__title">Datos de la entidad</h2>
+    <div class="grid grid--3">
+      <div class="field">
+        <label for="sel-entidad">Entidad <span class="req">*</span></label>
+        <select id="sel-entidad">
+          <option value="">Selecciona una entidad…</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="input-coordinador">Coordinador estatal</label>
+        <input type="text" id="input-coordinador" placeholder="Se sugiere al elegir entidad, puedes editarlo">
+      </div>
+      <div class="field field--readout">
+        <label>Número de unidades de 1er nivel</label>
+        <div class="readout" id="conteo-unidades">0</div>
+      </div>
+    </div>
+    <p class="hint" id="catalogo-status">Cargando catálogo de unidades…</p>
+  </section>
+
+  <section class="panel" id="panel-tabla">
+    <div class="panel__head">
+      <h2 class="panel__title">Rutas y unidades a distribuir</h2>
+      <button type="button" class="btn btn--primary" id="btn-agregar-fila">+ Agregar fila</button>
+    </div>
+    <p class="hint">
+      Elige el CLUES del listado (busca por clave o nombre). Si la unidad no aparece en el catálogo,
+      escribe el CLUES y completa <b>Nombre de la unidad</b> y <b>Tipo de unidad médica</b> a mano.
+    </p>
+
+    <div class="table-scroll">
+      <table id="tabla-captura">
+        <thead>
+          <tr>
+            <th style="width:130px">Fecha de distribución programada</th>
+            <th style="width:70px">Rutas</th>
+            <th style="width:190px">CLUES</th>
+            <th style="width:220px">Nombre de la unidad</th>
+            <th style="width:90px">Claves a desplazar</th>
+            <th style="width:110px">Piezas de medicamento</th>
+            <th style="width:120px">Piezas de material de curación</th>
+            <th style="width:140px">Tipo de unidad médica</th>
+            <th style="width:180px">¿Quién recibe en unidad?</th>
+            <th style="width:120px">Teléfono</th>
+            <th style="width:200px">Correo</th>
+            <th style="width:40px"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody-captura"></tbody>
+      </table>
+    </div>
+    <datalist id="datalist-clues"></datalist>
+  </section>
+
+  <section class="panel panel--actions">
+    <div class="actions-left">
+      <span class="draft-status" id="draft-status"></span>
+    </div>
+    <div class="actions-right">
+      <button type="button" class="btn btn--ghost" id="btn-limpiar">Limpiar captura</button>
+      <button type="button" class="btn btn--primary" id="btn-exportar">Descargar Excel</button>
+    </div>
+  </section>
+
+</main>
+
+<script src="vendor/exceljs.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
