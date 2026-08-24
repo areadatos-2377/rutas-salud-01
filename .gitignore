@@ -26,6 +26,9 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Memoria de trabajo personal con IA (protocolo_multiagentes.md) — no se comparte con el equipo
+.context/
+
 # Editors / OS
 .vscode/
 .idea/

@@ -1,5 +1,7 @@
 # Blueprint v00 — Sistema de Programación y Seguimiento de Distribución de Insumos para la Salud
 
+> **Superado por `blueprint-v01.md`** (2026-08-24), que incorpora las respuestas del área requirente y simplifica el modelo de datos. Este documento se conserva como histórico — no editar, no usar como fuente de verdad vigente.
+
 > Estado del documento: **borrador inicial (v00)**. Secciones marcadas como `[DEFINIDO]` son insumo de esta sesión; las marcadas `[PENDIENTE]` requieren validación con el área requirente (ver `preguntas-area-requirente.md`).
 
 ## 0. Control de versiones
