@@ -39,6 +39,18 @@ Endpoints, todos requieren sesión iniciada (`POST /api/auth/login/`):
 
 La regla "una unidad no puede repetirse en dos rutas de la misma jornada" se aplica tanto a nivel modelo (`ProgramacionVisita.clean()`) como a nivel API (reutilizada en el serializer). Probado con escenarios reales de los 3 roles vía `django.test.Client`, no solo revisión de código.
 
+## Catálogo de CLUES (carga mensual)
+
+El área actualiza `data/raw/CLUES_IMB.xlsx` cada mes. Cuando eso pase:
+
+```powershell
+cd backend
+python manage.py cargar_clues --dry-run   # revisar qué haría, sin escribir
+python manage.py cargar_clues             # aplicar de verdad
+```
+
+Es **seguro re-ejecutarlo** las veces que haga falta: agrega los CLUES nuevos, actualiza los que cambiaron de nombre/tipo/municipio, y **nunca toca ni borra** las unidades con `origen=manual` (las capturadas a mano porque su CLUES no estaba en el catálogo oficial — ver `blueprint/herramienta-captura-programacion-plan-v00.md`). Tampoco borra CLUES que hayan desaparecido del nuevo Excel; darlas de baja formalmente es una decisión de negocio aparte.
+
 ## Pendientes conocidos (no bloquean lo ya construido)
 
 - Autenticación de la API (por ahora `SessionAuthentication` vía DRF/cookies; falta decidir si se agrega JWT cuando exista el frontend React, para no depender de cookies same-site).

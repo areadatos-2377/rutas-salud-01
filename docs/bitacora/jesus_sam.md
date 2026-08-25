@@ -2,6 +2,13 @@
 
 > Formato y protocolo completo en `docs/protocolo-bitacora.md`. Entradas más recientes arriba.
 
+## 2026-08-24 — rama `jesus_sam` (9)
+
+**Resumen:** Comando `manage.py cargar_clues` (con `--dry-run`) — carga/actualiza Entidad y UnidadMedica en la base de datos real desde `data/raw/CLUES_IMB.xlsx` (antes ese Excel solo alimentaba el JSON de la sub-herramienta estática, nunca la base de datos del backend). Reutiliza la misma lógica de mapeo que `scripts/generar_catalogo_clues.py`. Idempotente por diseño: usa `update_or_create` por CLUES, nunca toca ni borra unidades con `origen=manual`, no borra CLUES ausentes del nuevo Excel. Probado de verdad: dry-run no escribe nada (verificado contando filas antes/después), la carga real trajo 9,460 unidades y 23 entidades, y correrlo una segunda vez da 0 creadas / todo sin cambios (confirma que es seguro para la actualización mensual que pidió el usuario).
+**Bloqueadores activos:** Ninguno.
+**Depende de / afecta a:** La base de datos de desarrollo ya tiene el catálogo real cargado — si Jorge corre `migrate` en su propia base, va a necesitar correr `python manage.py cargar_clues` también para tener los mismos datos.
+**Próximo:** El usuario pidió varias cosas más en la misma sesión: (1) exportar a `.xlsx` desde la vista de Programación del frontend con el mismo formato que `tools/captura-programacion/`, (2) catálogo de "coordinadores estatales" editable por `admin_nacional` (no solo `super_admin`), (3) paginación real en el frontend, (4) manejo de expiración de sesión.
+
 ## 2026-08-24 — rama `jesus_sam` (8)
 
 **Resumen:** Vistas de catálogos (Entidades, Unidades médicas) para `super_admin`, y edición de ProgramacionVisita existente (botón "Editar" → formulario precargado → PATCH; CLUES queda bloqueado al editar). Encontré y corregí un gap real de seguridad/UX con la prueba en navegador: las rutas `/catalogos/*` solo ocultaban el link del nav para `usuario_entidad`, pero no protegían la ruta — por el redirect "volver a donde estabas" tras un logout/login terminé aterrizando ahí con el usuario equivocado y sí podía **ver** la página (el backend ya bloqueaba escribir, pero ver tampoco debería). Agregué `RequireRole` en `App.jsx`.
