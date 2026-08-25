@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../api/client';
+import { useAuth, ROLES } from '../auth/AuthContext';
 import '../styles/table.css';
 import './JornadaDetallePage.css';
 
@@ -31,8 +32,14 @@ function agruparPorEntidad(rutas, visitas) {
 
 export default function JornadaDetallePage() {
   const { id } = useParams();
+  const { usuario } = useAuth();
+  // usuario_entidad de por si solo ve su propia entidad (el backend ya la
+  // filtra) -- el selector solo tiene sentido para roles que ven varias.
+  const puedeFiltrarEntidad = usuario?.rol !== ROLES.USUARIO_ENTIDAD;
+
   const [jornada, setJornada] = useState(null);
   const [grupos, setGrupos] = useState(null);
+  const [filtroEntidad, setFiltroEntidad] = useState('');
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -68,6 +75,20 @@ export default function JornadaDetallePage() {
         </div>
       </div>
 
+      {puedeFiltrarEntidad && grupos?.length > 0 && (
+        <div className="panel-form">
+          <div className="field">
+            <label htmlFor="filtroEntidad">Entidad</label>
+            <select id="filtroEntidad" value={filtroEntidad} onChange={(e) => setFiltroEntidad(e.target.value)}>
+              <option value="">Todas ({grupos.length})</option>
+              {grupos.map((g) => (
+                <option key={g.entidad} value={g.entidad}>{g.entidad}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
       {error && <p className="login-error" style={{ maxWidth: 400 }}>{error}</p>}
 
       {grupos === null && !error && <p style={{ color: 'var(--gray-tx)', fontSize: 13.5 }}>Cargando…</p>}
@@ -78,7 +99,9 @@ export default function JornadaDetallePage() {
         </p>
       )}
 
-      {grupos?.map((grupo) => (
+      {grupos
+        ?.filter((g) => !filtroEntidad || g.entidad === filtroEntidad)
+        .map((grupo) => (
         <div key={grupo.entidad} className="entidad-group">
           <div className="entidad-group__header">
             <h3>{grupo.entidad}</h3>
