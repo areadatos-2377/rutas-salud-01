@@ -2,6 +2,13 @@
 
 > Formato y protocolo completo en `docs/protocolo-bitacora.md`. Entradas más recientes arriba.
 
+## 2026-08-24 — rama `jesus_sam` (2)
+
+**Resumen:** Arrancado el backend Django (`backend/`): 5 apps (usuarios, catalogos, programacion, entregas, historico) con los modelos del diagrama ER, admin registrado, migraciones generadas y validadas contra SQLite (incluye prueba real de la regla "unidad no repetida en la misma jornada" y del histórico genérico vía ContentType). Decisiones aplicadas: CLUES como PK de UnidadMedica (con soporte de alta manual), sin usuario_id en ProgramacionVisita.
+**Bloqueadores activos:** Ninguno.
+**Depende de / afecta a:** Si Jorge va a tocar el backend, que revise `backend/README.md` (pendientes conocidos) antes: falta la API DRF (solo hay modelos+admin), falta decidir autenticación de la API, y quedan 2 notas de diseño abiertas en `blueprint/diagrama-er-v01.md` (granularidad de bloqueo, almacenamiento de evidencia) que no bloquean programación pero sí evidencia.
+**Próximo:** Serializers/viewsets DRF para exponer el módulo de programación.
+
 ## 2026-08-24 — rama `jesus_sam`
 
 **Resumen:** Creado el diagrama ER definitivo del modelo de datos (`blueprint/diagrama-er-v01.md`, Mermaid) a partir de blueprint v01 sección 5. Se creó la rama personal `jesus_sam` (larga duración, se fusiona a `master` periódicamente). Nota de proceso: primero publiqué el diagrama solo como Artifact de Claude, pero eso no es visible para Jorge ni su IA (privado, requiere mi sesión de claude.ai) — se corrigió comitteándolo como `.md` con un bloque ```mermaid, que GitHub renderiza solo y que cualquier IA puede leer como texto plano vía git.

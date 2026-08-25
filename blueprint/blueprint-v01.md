@@ -123,6 +123,7 @@ Estas preguntas del documento original no se respondieron todavía — no bloque
 ## 10. Próximos pasos
 
 1. ~~Diseñar el diagrama ER definitivo a partir del modelo simplificado de la sección 5.~~ Hecho: ver `blueprint/diagrama-er-v01.md`.
-2. Definir el mecanismo de bloqueo/desbloqueo de edición de programación (2.3) — a nivel de qué (jornada completa, por ruta, por unidad individual).
-3. Cerrar los 4 pendientes de la sección 9 con el área antes de diseñar el módulo de evidencia.
-4. Empezar el diseño del backend Django (modelos, catálogos, autenticación) para el módulo de programación, ya validado conceptualmente por la sub-herramienta de captura.
+2. ~~Empezar el diseño del backend Django (modelos, catálogos, autenticación) para el módulo de programación.~~ Hecho: ver `backend/` (modelos, admin y migraciones de los 5 apps, probados contra SQLite).
+3. Construir la API DREST (serializers/viewsets) sobre esos modelos.
+4. Definir el mecanismo de bloqueo/desbloqueo de edición de programación (2.3) — a nivel de qué (jornada completa, por ruta, por unidad individual). El campo `bloqueada` ya existe a nivel fila en `ProgramacionVisita`.
+5. Cerrar los 4 pendientes de la sección 9 con el área antes de diseñar el módulo de evidencia.

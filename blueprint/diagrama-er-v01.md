@@ -26,6 +26,7 @@ erDiagram
         int entidad_id FK
         string tipo_unidad_medica
         string municipio
+        string origen "catalogo_mensual / manual"
     }
     USUARIO {
         int id PK
@@ -35,6 +36,7 @@ erDiagram
     }
     JORNADA {
         int id PK
+        string nombre "ej. sexta distribucion"
         string tipo "ordinaria / extraordinaria / emergencia"
         date fecha_inicio
         date fecha_fin
@@ -93,9 +95,12 @@ erDiagram
 4. Una **Entrega** puede tener cero o varios archivos de **EvidenciaArchivo** — no hay mínimo requerido.
 5. **HistoricoMovimientos** es genérico: no referencia una tabla específica, registra qué tabla/registro cambió y quién lo hizo — por eso no tiene flecha directa hacia Programación o Entrega en el diagrama.
 
-## Notas y preguntas abiertas
+## Decisiones (2026-08-24)
 
-- **[Riesgo]** `UnidadMedica.clues` como llave primaria asume que el catálogo `CLUES_IMB.xlsx` cubre los códigos reales de programación — ya sabemos que no es así del todo (ver `blueprint/herramienta-captura-programacion-plan-v00.md`). Si una unidad no está en catálogo, este modelo necesitará permitir capturar el CLUES como texto libre igual que hace la sub-herramienta, o la FK se rompe.
-- **[Campo no confirmado]** `ProgramacionVisita` no tiene un `usuario_id` propio (quién la capturó) en el blueprint — solo `Entrega` lo tiene. Vale la pena confirmar si hace falta para trazabilidad, o si `HistoricoMovimientos` genérico ya lo cubre.
-- **[Sin definir]** Granularidad exacta del campo `bloqueada`: el blueprint pide poder bloquear/desbloquear edición "todas o algunas" unidades — este modelo lo resuelve a nivel de fila (cada `ProgramacionVisita`), que ya soporta bloquear individualmente o en lote, pero falta decidir si también se necesita un bloqueo a nivel **Jornada** completa como atajo.
-- **[Sin definir]** `EvidenciaArchivo.archivo` es un campo genérico de referencia — dónde vive el archivo (object storage, filesystem, proveedor) sigue sin decidirse (blueprint v01, sección 9, punto 3).
+- **CLUES como PK de `UnidadMedica`: confirmado.** Consecuencia directa para la implementación: como el catálogo `CLUES_IMB.xlsx` no cubre todos los CLUES reales de programación (ver `blueprint/herramienta-captura-programacion-plan-v00.md`), `UnidadMedica` debe poder crearse también **manualmente** (clues + nombre + tipo capturados a mano), no solo por la importación mensual del catálogo — igual que ya hace la sub-herramienta de captura. Sin esto, una `ProgramacionVisita` con un CLUES fuera de catálogo no tendría a qué unidad apuntar.
+- **`ProgramacionVisita` no necesita trazabilidad de usuario: confirmado.** No se agrega `usuario_id` a esa tabla — se descarta la duda planteada.
+
+## Preguntas abiertas restantes
+
+- **[Sin definir]** Granularidad exacta del campo `bloqueada`: el blueprint pide poder bloquear/desbloquear edición "todas o algunas" unidades — este modelo lo resuelve a nivel de fila (cada `ProgramacionVisita`), que ya soporta bloquear individualmente o en lote, pero falta decidir si también se necesita un bloqueo a nivel **Jornada** completa como atajo. No bloquea empezar el backend: el campo ya existe a nivel fila.
+- **[Sin definir]** `EvidenciaArchivo.archivo` es un campo genérico de referencia — dónde vive el archivo (object storage, filesystem, proveedor) sigue sin decidirse (blueprint v01, sección 9, punto 3). No bloquea el módulo de **programación**; sí hay que resolverlo antes de construir **evidencia**.
