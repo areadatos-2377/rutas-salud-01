@@ -10,11 +10,12 @@ from .models import Jornada, ProgramacionVisita, Ruta
 class JornadaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Jornada
-        fields = ["id", "nombre", "tipo", "fecha_inicio", "fecha_fin", "estatus"]
+        fields = ["id", "nombre", "tipo", "categoria", "fecha_inicio", "fecha_fin", "estatus"]
 
 
 class RutaSerializer(serializers.ModelSerializer):
     jornada_nombre = serializers.CharField(source="jornada.nombre", read_only=True)
+    jornada_categoria = serializers.CharField(source="jornada.categoria", read_only=True)
     entidad_nombre = serializers.CharField(source="entidad.nombre", read_only=True)
     # No requerido aqui: para usuario_entidad el viewset lo fuerza server-side en
     # perform_create y el frontend ni lo manda. Solo super_admin debe mandarlo
@@ -23,7 +24,15 @@ class RutaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Ruta
-        fields = ["id", "jornada", "jornada_nombre", "entidad", "entidad_nombre", "numero_o_nombre"]
+        fields = [
+            "id",
+            "jornada",
+            "jornada_nombre",
+            "jornada_categoria",
+            "entidad",
+            "entidad_nombre",
+            "numero_o_nombre",
+        ]
 
 
 class ProgramacionVisitaSerializer(serializers.ModelSerializer):

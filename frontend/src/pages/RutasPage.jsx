@@ -5,6 +5,8 @@ import { useAuth, ROLES } from '../auth/AuthContext';
 import { exportarProgramacionExcel } from '../utils/exportarProgramacionExcel';
 import '../styles/table.css';
 
+const CATEGORIA_LABEL = { primer_nivel: 'Primer nivel', segundo_tercer_nivel: 'Segundo y tercer nivel' };
+
 export default function RutasPage() {
   const { usuario } = useAuth();
   const puedeEscribir = usuario?.rol === ROLES.USUARIO_ENTIDAD || usuario?.rol === ROLES.SUPER_ADMIN;
@@ -95,7 +97,7 @@ export default function RutasPage() {
           <select id="jornada" value={jornadaId} onChange={(e) => setJornadaId(e.target.value)}>
             {jornadas.map((j) => (
               <option key={j.id} value={j.id}>
-                {j.nombre}
+                {j.nombre} — {CATEGORIA_LABEL[j.categoria] || j.categoria}
               </option>
             ))}
           </select>

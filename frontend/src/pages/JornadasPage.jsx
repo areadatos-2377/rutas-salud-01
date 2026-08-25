@@ -4,6 +4,7 @@ import { useAuth, ROLES } from '../auth/AuthContext';
 import '../styles/table.css';
 
 const TIPO_LABEL = { ordinaria: 'Ordinaria', extraordinaria: 'Extraordinaria', emergencia: 'Emergencia' };
+const CATEGORIA_LABEL = { primer_nivel: 'Primer nivel', segundo_tercer_nivel: 'Segundo y tercer nivel' };
 const ESTATUS_BADGE = {
   planeada: 'gris',
   en_curso: 'verde',
@@ -18,7 +19,7 @@ export default function JornadasPage() {
   const [jornadas, setJornadas] = useState(null);
   const [error, setError] = useState(null);
   const [formulario, setFormulario] = useState({
-    nombre: '', tipo: 'ordinaria', fecha_inicio: '', fecha_fin: '',
+    nombre: '', tipo: 'ordinaria', categoria: 'primer_nivel', fecha_inicio: '', fecha_fin: '',
   });
   const [creando, setCreando] = useState(false);
 
@@ -40,7 +41,7 @@ export default function JornadasPage() {
     setError(null);
     try {
       await api.post('/api/jornadas/', formulario);
-      setFormulario({ nombre: '', tipo: 'ordinaria', fecha_inicio: '', fecha_fin: '' });
+      setFormulario({ nombre: '', tipo: 'ordinaria', categoria: 'primer_nivel', fecha_inicio: '', fecha_fin: '' });
       await cargar();
     } catch {
       setError('No se pudo crear la jornada. Revisa los datos.');
@@ -83,6 +84,17 @@ export default function JornadasPage() {
             </select>
           </div>
           <div className="field">
+            <label htmlFor="categoria">Categoría</label>
+            <select
+              id="categoria"
+              value={formulario.categoria}
+              onChange={(e) => setFormulario({ ...formulario, categoria: e.target.value })}
+            >
+              <option value="primer_nivel">Primer nivel</option>
+              <option value="segundo_tercer_nivel">Segundo y tercer nivel</option>
+            </select>
+          </div>
+          <div className="field">
             <label htmlFor="fecha_inicio">Fecha inicio</label>
             <input
               id="fecha_inicio"
@@ -116,6 +128,7 @@ export default function JornadasPage() {
             <tr>
               <th>Nombre</th>
               <th>Tipo</th>
+              <th>Categoría</th>
               <th>Fecha inicio</th>
               <th>Fecha fin</th>
               <th>Estatus</th>
@@ -123,15 +136,16 @@ export default function JornadasPage() {
           </thead>
           <tbody>
             {jornadas === null && (
-              <tr><td colSpan={5} className="tabla-vacia">Cargando…</td></tr>
+              <tr><td colSpan={6} className="tabla-vacia">Cargando…</td></tr>
             )}
             {jornadas?.length === 0 && (
-              <tr><td colSpan={5} className="tabla-vacia">Todavía no hay jornadas.</td></tr>
+              <tr><td colSpan={6} className="tabla-vacia">Todavía no hay jornadas.</td></tr>
             )}
             {jornadas?.map((j) => (
               <tr key={j.id}>
                 <td className="nombre">{j.nombre}</td>
                 <td>{TIPO_LABEL[j.tipo] || j.tipo}</td>
+                <td>{CATEGORIA_LABEL[j.categoria] || j.categoria}</td>
                 <td>{j.fecha_inicio}</td>
                 <td>{j.fecha_fin}</td>
                 <td>

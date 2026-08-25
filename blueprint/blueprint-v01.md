@@ -23,6 +23,7 @@ Las entidades (estados) programan la distribución de insumos para la salud haci
 - La abre el **administrador nacional** o el **super administrador**.
 - Puede haber **más de una jornada activa al mismo tiempo**.
 - Catálogo de tipos de jornada: **ordinaria, extraordinaria, emergencia**.
+- **Categoría (agregado 2026-08-24):** cada jornada es de **una sola categoría**: **primer nivel**, o **segundo y tercer nivel** (combinados en una sola categoría, no separados). Puede existir "sexta distribución" de primer nivel y otra "sexta distribución" de segundo y tercer nivel al mismo tiempo, como jornadas independientes con fechas distintas. Una jornada no mezcla unidades de categorías distintas — se valida en duro (no solo se sugiere en la interfaz), igual que la regla de "unidad no repetida en la misma jornada".
 - `[ABIERTO]` El ciclo de vida exacto (qué estatus tiene una jornada además de "abierta/cerrada", quién la cierra) no quedó del todo especificado — a definir en el diseño detallado de este módulo.
 
 ### 2.2 Rutas `[RESUELTO]`

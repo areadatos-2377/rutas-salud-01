@@ -27,6 +27,7 @@ erDiagram
         string tipo_unidad_medica
         string municipio
         string origen "catalogo_mensual / manual"
+        string nivel_atencion "primer / segundo / tercer nivel"
     }
     USUARIO {
         int id PK
@@ -38,6 +39,7 @@ erDiagram
         int id PK
         string nombre "ej. sexta distribucion"
         string tipo "ordinaria / extraordinaria / emergencia"
+        string categoria "primer_nivel / segundo_tercer_nivel"
         date fecha_inicio
         date fecha_fin
         string estatus
@@ -99,6 +101,8 @@ erDiagram
 
 - **CLUES como PK de `UnidadMedica`: confirmado.** Consecuencia directa para la implementación: como el catálogo `CLUES_IMB.xlsx` no cubre todos los CLUES reales de programación (ver `blueprint/herramienta-captura-programacion-plan-v00.md`), `UnidadMedica` debe poder crearse también **manualmente** (clues + nombre + tipo capturados a mano), no solo por la importación mensual del catálogo — igual que ya hace la sub-herramienta de captura. Sin esto, una `ProgramacionVisita` con un CLUES fuera de catálogo no tendría a qué unidad apuntar.
 - **`ProgramacionVisita` no necesita trazabilidad de usuario: confirmado.** No se agrega `usuario_id` a esa tabla — se descarta la duda planteada.
+- **`UnidadMedica.nivel_atencion` (más tarde el mismo día):** el catálogo se amplió de solo primer nivel a los 3 niveles reales de la fuente (excluye "NO APLICA").
+- **`Jornada.categoria` (más tarde el mismo día):** una jornada es de UNA sola categoría — `primer_nivel` o `segundo_tercer_nivel` (segundo y tercer nivel combinados). Puede existir "sexta distribución" de primer nivel y otra "sexta distribución" de segundo y tercer nivel, como jornadas separadas con fechas distintas; **no se mezclan** rutas/visitas de categorías distintas dentro de una misma jornada. `ProgramacionVisita.clean()` valida en duro que `unidad_medica.nivel_atencion` corresponda a la categoría de `ruta.jornada` — igual de estricto que la regla de "unidad no repetida en la misma jornada".
 
 ## Preguntas abiertas restantes
 

@@ -5,8 +5,8 @@ from .models import Jornada, ProgramacionVisita, Ruta
 
 @admin.register(Jornada)
 class JornadaAdmin(admin.ModelAdmin):
-    list_display = ["nombre", "tipo", "fecha_inicio", "fecha_fin", "estatus"]
-    list_filter = ["tipo", "estatus"]
+    list_display = ["nombre", "tipo", "categoria", "fecha_inicio", "fecha_fin", "estatus"]
+    list_filter = ["categoria", "tipo", "estatus"]
 
 
 @admin.register(Ruta)

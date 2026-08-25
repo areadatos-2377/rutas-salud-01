@@ -43,5 +43,8 @@ class UnidadMedicaViewSet(viewsets.ModelViewSet):
             qs = qs.filter(entidad_id=entidad_id)
         nivel_atencion = self.request.query_params.get("nivel_atencion")
         if nivel_atencion:
-            qs = qs.filter(nivel_atencion=nivel_atencion)
+            # admite uno o varios separados por coma (ej. "SEGUNDO NIVEL,TERCER
+            # NIVEL" para la categoria de jornada "segundo y tercer nivel").
+            niveles = [n.strip() for n in nivel_atencion.split(",") if n.strip()]
+            qs = qs.filter(nivel_atencion__in=niveles)
         return qs

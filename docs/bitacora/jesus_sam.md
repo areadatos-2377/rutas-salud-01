@@ -2,6 +2,13 @@
 
 > Formato y protocolo completo en `docs/protocolo-bitacora.md`. Entradas más recientes arriba.
 
+## 2026-08-24 — rama `jesus_sam` (14)
+
+**Resumen:** `Jornada.categoria` (`primer_nivel` / `segundo_tercer_nivel`) — el usuario aclaró una regla de negocio que no teníamos: una jornada de distribución es de UNA sola categoría completa (puede existir "sexta distribución" de primer nivel Y otra "sexta distribución" de segundo y tercer nivel, jornadas separadas con fechas distintas). Le pregunté 2 cosas antes de tocar el modelo (si la categoría va por jornada completa o por ruta, y si la validación debe ser dura o solo sugerida en UI) — confirmó ambas en el sentido más estricto. Implementado: validación dura en `ProgramacionVisita.clean()` (reusa el patrón ya existente de la regla "unidad no repetida"), selector de categoría al crear jornada, autocompletado de CLUES en la captura filtra dinámicamente según la categoría real (ya no hardcodeado a primer nivel — corrige lo que dejé fijo en el commit anterior de `nivel_atencion`), y el título del Excel exportado también es dinámico por categoría.
+**Bloqueadores activos:** Ninguno.
+**Depende de / afecta a:** Esto reemplaza el filtro hardcodeado a "PRIMER NIVEL" que agregué hace un rato en `ProgramacionVisitaPage` — si Jorge vio ese commit anterior, ya no aplica, ahora es dinámico vía `ruta.jornada_categoria`.
+**Próximo:** A decidir con el usuario.
+
 ## 2026-08-24 — rama `jesus_sam` (13)
 
 **Resumen:** Campo `nivel_atencion` en `UnidadMedica` (PRIMER/SEGUNDO/TERCER NIVEL, de la columna "NIVEL ATENCION" del Excel) — a petición del usuario, visible y filtrable en `UnidadesMedicasPage`. Le pregunté si ampliábamos el catálogo a los 3 niveles o solo mostrábamos el atributo manteniendo el filtro a primer nivel; eligió ampliar. `cargar_clues` ahora importa los 3 niveles (antes solo primer nivel) — catálogo real pasó de 9,460 a 10,136 unidades. **Importante:** el módulo de programación (captura de `ProgramacionVisita`) sigue restringido a solo primer nivel — el autocompletado de CLUES en la captura manda `?nivel_atencion=PRIMER NIVEL` explícitamente, para que ampliar el catálogo administrativo no cambie el alcance del programa de distribución (blueprint-v01.md sección 1).

@@ -28,8 +28,29 @@ class Jornada(models.Model):
         (ESTATUS_CANCELADA, "Cancelada"),
     ]
 
+    # Decision 2026-08-24: una jornada de distribucion es entera de UNA
+    # categoria -- puede haber "sexta distribucion" de primer nivel Y otra
+    # "sexta distribucion" de segundo y tercer nivel (combinados en una sola
+    # categoria), como jornadas separadas con sus propias fechas. No se
+    # mezclan rutas/visitas de categorias distintas dentro de una misma
+    # jornada (validado en ProgramacionVisita.clean()).
+    CATEGORIA_PRIMER_NIVEL = "primer_nivel"
+    CATEGORIA_SEGUNDO_TERCER_NIVEL = "segundo_tercer_nivel"
+    CATEGORIA_CHOICES = [
+        (CATEGORIA_PRIMER_NIVEL, "Primer nivel"),
+        (CATEGORIA_SEGUNDO_TERCER_NIVEL, "Segundo y tercer nivel"),
+    ]
+    # Que niveles de UnidadMedica.nivel_atencion son validos para cada categoria.
+    NIVELES_POR_CATEGORIA = {
+        CATEGORIA_PRIMER_NIVEL: {UnidadMedica.NIVEL_PRIMER},
+        CATEGORIA_SEGUNDO_TERCER_NIVEL: {UnidadMedica.NIVEL_SEGUNDO, UnidadMedica.NIVEL_TERCER},
+    }
+
     nombre = models.CharField(max_length=150)
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    categoria = models.CharField(
+        max_length=25, choices=CATEGORIA_CHOICES, default=CATEGORIA_PRIMER_NIVEL
+    )
     fecha_inicio = models.DateField()
     fecha_fin = models.DateField()
     estatus = models.CharField(max_length=20, choices=ESTATUS_CHOICES, default=ESTATUS_PLANEADA)
@@ -97,6 +118,18 @@ class ProgramacionVisita(models.Model):
         if conflicto:
             raise ValidationError(
                 "Esta unidad médica ya está programada en otra ruta de la misma jornada."
+            )
+
+        # Decision 2026-08-24: una jornada es de una sola categoria (primer
+        # nivel, o segundo y tercer nivel) -- no se puede programar una unidad
+        # cuyo nivel de atencion no corresponda a la categoria de la jornada.
+        categoria = self.ruta.jornada.categoria
+        niveles_validos = Jornada.NIVELES_POR_CATEGORIA[categoria]
+        if self.unidad_medica.nivel_atencion not in niveles_validos:
+            categoria_label = dict(Jornada.CATEGORIA_CHOICES)[categoria]
+            raise ValidationError(
+                f"Esta jornada es de categoría «{categoria_label}»; "
+                f"«{self.unidad_medica}» es de {self.unidad_medica.nivel_atencion.lower()}."
             )
 
     def __str__(self):

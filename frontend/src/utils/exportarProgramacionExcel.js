@@ -26,8 +26,18 @@ const ESTILO = {
   bordeThin: { style: 'thin' },
 };
 
-const TITULO_INSTITUCIONAL =
-  'PROGRAMACIÓN DE RUTAS DE LA SALUD PARA ABASTECER PIEZAS DE MEDICAMENTOS\nY MATERIAL DE CURACIÓN A UNIDADES DE PRIMER NIVEL DE ATENCIÓN';
+// La cola del titulo depende de la categoria de la jornada -- antes estaba
+// fija asumiendo "primer nivel" siempre, pero ya hay jornadas de "segundo y
+// tercer nivel" tambien (blueprint 2026-08-24).
+const TITULO_POR_CATEGORIA = {
+  primer_nivel: 'A UNIDADES DE PRIMER NIVEL DE ATENCIÓN',
+  segundo_tercer_nivel: 'A UNIDADES DE SEGUNDO Y TERCER NIVEL DE ATENCIÓN',
+};
+
+function tituloInstitucional(categoria) {
+  const cola = TITULO_POR_CATEGORIA[categoria] || TITULO_POR_CATEGORIA.primer_nivel;
+  return `PROGRAMACIÓN DE RUTAS DE LA SALUD PARA ABASTECER PIEZAS DE MEDICAMENTOS\nY MATERIAL DE CURACIÓN ${cola}`;
+}
 
 const MESES = [
   'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
@@ -75,7 +85,7 @@ export async function exportarProgramacionExcel({ jornada, entidad, visitas }) {
 
   ws.mergeCells('D2:J4');
   const tituloCell = ws.getCell('D2');
-  tituloCell.value = `${TITULO_INSTITUCIONAL}\n${formatearRangoFechas(jornada.fecha_inicio, jornada.fecha_fin)}`;
+  tituloCell.value = `${tituloInstitucional(jornada.categoria)}\n${formatearRangoFechas(jornada.fecha_inicio, jornada.fecha_fin)}`;
   tituloCell.alignment = { wrapText: true, vertical: 'middle', horizontal: 'center' };
   tituloCell.font = { bold: true, size: 16, name: 'Noto Sans', color: { argb: ESTILO.tealText } };
   tituloCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ESTILO.tealBg } };

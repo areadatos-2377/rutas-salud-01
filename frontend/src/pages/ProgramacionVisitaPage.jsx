@@ -4,6 +4,14 @@ import { api, ApiError } from '../api/client';
 import { useAuth, ROLES } from '../auth/AuthContext';
 import '../styles/table.css';
 
+// Que niveles de UnidadMedica.nivel_atencion son programables en cada
+// categoria de jornada (blueprint: una jornada es de UNA sola categoria).
+const NIVELES_POR_CATEGORIA = {
+  primer_nivel: 'PRIMER NIVEL',
+  segundo_tercer_nivel: 'SEGUNDO NIVEL,TERCER NIVEL',
+};
+const CATEGORIA_LABEL = { primer_nivel: 'Primer nivel', segundo_tercer_nivel: 'Segundo y tercer nivel' };
+
 const CAMPOS_VACIOS = {
   clues: '',
   unidad_medica_nombre: '',
@@ -43,10 +51,12 @@ export default function ProgramacionVisitaPage() {
       // getAll: entidades grandes tienen cientos/miles de unidades medicas --
       // con paginacion normal, el autocompletado solo hubiera mostrado las
       // primeras 50 y el resto habria sido invisible para quien captura.
-      // nivel_atencion=PRIMER NIVEL: el catalogo administrativo ya incluye
-      // los 3 niveles, pero la programacion de distribucion sigue siendo
-      // solo para unidades de primer nivel (blueprint-v01.md seccion 1).
-      const params = new URLSearchParams({ entidad: r.entidad, nivel_atencion: 'PRIMER NIVEL' });
+      // nivel_atencion: el catalogo administrativo incluye los 3 niveles, pero
+      // cada jornada es de UNA sola categoria (primer nivel, o segundo y
+      // tercer nivel combinados) -- el autocompletado solo debe ofrecer
+      // unidades que la API vaya a aceptar para esta jornada especifica.
+      const nivelesPermitidos = NIVELES_POR_CATEGORIA[r.jornada_categoria] || 'PRIMER NIVEL';
+      const params = new URLSearchParams({ entidad: r.entidad, nivel_atencion: nivelesPermitidos });
       api.getAll(`/api/unidades-medicas/?${params}`).then(setUnidades);
     });
     cargarVisitas();
@@ -146,6 +156,11 @@ export default function ProgramacionVisitaPage() {
         <div>
           <p className="crumb">
             <Link to="/rutas">Rutas</Link> · {ruta?.jornada_nombre}
+            {ruta && (
+              <span className={`badge ${ruta.jornada_categoria === 'primer_nivel' ? 'verde' : 'dorado'}`} style={{ marginLeft: 8 }}>
+                {CATEGORIA_LABEL[ruta.jornada_categoria] || ruta.jornada_categoria}
+              </span>
+            )}
           </p>
           <h2>{ruta ? `${ruta.entidad_nombre} — Ruta ${ruta.numero_o_nombre}` : 'Cargando…'}</h2>
         </div>
