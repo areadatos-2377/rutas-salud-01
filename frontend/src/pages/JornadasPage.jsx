@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth, ROLES } from '../auth/AuthContext';
 import '../styles/table.css';
@@ -132,14 +133,15 @@ export default function JornadasPage() {
               <th>Fecha inicio</th>
               <th>Fecha fin</th>
               <th>Estatus</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             {jornadas === null && (
-              <tr><td colSpan={6} className="tabla-vacia">Cargando…</td></tr>
+              <tr><td colSpan={7} className="tabla-vacia">Cargando…</td></tr>
             )}
             {jornadas?.length === 0 && (
-              <tr><td colSpan={6} className="tabla-vacia">Todavía no hay jornadas.</td></tr>
+              <tr><td colSpan={7} className="tabla-vacia">Todavía no hay jornadas.</td></tr>
             )}
             {jornadas?.map((j) => (
               <tr key={j.id}>
@@ -150,6 +152,11 @@ export default function JornadasPage() {
                 <td>{j.fecha_fin}</td>
                 <td>
                   <span className={`badge ${ESTATUS_BADGE[j.estatus] || 'gris'}`}>{j.estatus}</span>
+                </td>
+                <td style={{ textAlign: 'right' }}>
+                  <Link className="btn-ghost" to={`/jornadas/${j.id}`}>
+                    Ver rutas y unidades
+                  </Link>
                 </td>
               </tr>
             ))}

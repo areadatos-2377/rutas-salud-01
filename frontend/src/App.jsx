@@ -3,6 +3,7 @@ import { AuthProvider, useAuth, ROLES } from './auth/AuthContext';
 import Shell from './components/Shell';
 import LoginPage from './pages/LoginPage';
 import JornadasPage from './pages/JornadasPage';
+import JornadaDetallePage from './pages/JornadaDetallePage';
 import RutasPage from './pages/RutasPage';
 import ProgramacionVisitaPage from './pages/ProgramacionVisitaPage';
 import EntidadesPage from './pages/EntidadesPage';
@@ -42,6 +43,7 @@ export default function App() {
         >
           <Route index element={<Navigate to="/jornadas" replace />} />
           <Route path="jornadas" element={<JornadasPage />} />
+          <Route path="jornadas/:id" element={<JornadaDetallePage />} />
           <Route path="rutas" element={<RutasPage />} />
           <Route path="rutas/:id" element={<ProgramacionVisitaPage />} />
           <Route

@@ -35,5 +35,8 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 
+# Archivos de bloqueo temporal de Office (se crean al abrir un .xlsx/.docx)
+~$*
+
 # Logs
 *.log

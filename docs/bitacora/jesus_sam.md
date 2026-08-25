@@ -2,6 +2,15 @@
 
 > Formato y protocolo completo en `docs/protocolo-bitacora.md`. Entradas más recientes arriba.
 
+## 2026-08-25 — rama `jesus_sam` (15)
+
+**Resumen:** Corregí un problema de puertos: al levantar los servidores para que el usuario revisara localmente, un `curl 200` en el 5173 resultó ser la app de otro proyecto suyo (`Menu_Portafolio_Trabajo_IMB`, con `--strictPort`) — el proceso real de Rutas_01 ya había muerto en silencio. Fijé el frontend en el **5183** (`vite.config.js`, `strictPort:true` para que un choque futuro dé error claro) y ajusté CORS/CSRF en el backend a juego; reverificado con Playwright real (login con la cuenta del usuario), no solo curl. También le creé su cuenta real (`jesus.hernandezh@imssbienestar.gob.mx`, rol super_admin) y le confirmé con el hash real en la BD que las contraseñas sí se guardan cifradas (PBKDF2+SHA256, no era algo pendiente).
+
+Después, a petición del usuario tras usar la app él mismo: nueva vista `JornadaDetallePage` (`/jornadas/:id`) — rutas y unidades agrupadas por entidad en una sola pantalla, con las 11 columnas completas del formato original (antes solo mostraba 7). Probado con datos reales multi-entidad que el propio usuario ya había capturado (Campeche + Colima en la misma jornada).
+**Bloqueadores activos:** Ninguno.
+**Depende de / afecta a:** Si Jorge corre el proyecto en su máquina y no tiene el mismo choque de puertos, puede dejar los defaults (5173/8000) cambiando `vite.config.js` y `backend/.env` — no es un valor fijo del proyecto, es específico de esta máquina.
+**Próximo:** A decidir con el usuario.
+
 ## 2026-08-24 — rama `jesus_sam` (14)
 
 **Resumen:** `Jornada.categoria` (`primer_nivel` / `segundo_tercer_nivel`) — el usuario aclaró una regla de negocio que no teníamos: una jornada de distribución es de UNA sola categoría completa (puede existir "sexta distribución" de primer nivel Y otra "sexta distribución" de segundo y tercer nivel, jornadas separadas con fechas distintas). Le pregunté 2 cosas antes de tocar el modelo (si la categoría va por jornada completa o por ruta, y si la validación debe ser dura o solo sugerida en UI) — confirmó ambas en el sentido más estricto. Implementado: validación dura en `ProgramacionVisita.clean()` (reusa el patrón ya existente de la regla "unidad no repetida"), selector de categoría al crear jornada, autocompletado de CLUES en la captura filtra dinámicamente según la categoría real (ya no hardcodeado a primer nivel — corrige lo que dejé fijo en el commit anterior de `nivel_atencion`), y el título del Excel exportado también es dinámico por categoría.
