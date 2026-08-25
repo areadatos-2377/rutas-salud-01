@@ -1,0 +1,121 @@
+@import './tokens.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bone);
+  color: #211f1c;
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select {
+  font-family: inherit;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--guinda);
+  color: #fff;
+  border: none;
+  padding: 0 16px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+}
+.btn-primary:hover {
+  background: var(--guinda-d);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: #3a3733;
+  font-weight: 700;
+  font-size: 13px;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.btn-ghost:hover {
+  background: #f4f1ea;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.field label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #3a3733;
+}
+.field input,
+.field select {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 11px;
+  font-size: 13.5px;
+  color: #211f1c;
+  background: var(--paper);
+  outline: none;
+  transition: border-color 0.15s ease;
+  width: 100%;
+}
+.field input:focus,
+.field select:focus {
+  border-color: var(--guinda);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.badge.verde {
+  background: var(--verde-pale-bg);
+  color: var(--verde-pale-tx);
+}
+.badge.dorado {
+  background: var(--dorado-pale-bg);
+  color: var(--dorado-pale-tx);
+}
+.badge.guinda {
+  background: var(--guinda-pale-bg);
+  color: var(--guinda-pale-tx);
+}
+.badge.gris {
+  background: #f0eee8;
+  color: var(--gray-tx);
+}

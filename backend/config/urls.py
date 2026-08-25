@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 
 from catalogos.views import EntidadViewSet, UnidadMedicaViewSet
 from programacion.views import JornadaViewSet, ProgramacionVisitaViewSet, RutaViewSet
-from usuarios.views import cerrar_sesion, iniciar_sesion, yo
+from usuarios.views import cerrar_sesion, csrf, iniciar_sesion, yo
 
 router = DefaultRouter()
 router.register("entidades", EntidadViewSet)
@@ -15,6 +15,7 @@ router.register("programacion-visitas", ProgramacionVisitaViewSet)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("api/auth/csrf/", csrf),
     path("api/auth/login/", iniciar_sesion),
     path("api/auth/logout/", cerrar_sesion),
     path("api/auth/me/", yo),

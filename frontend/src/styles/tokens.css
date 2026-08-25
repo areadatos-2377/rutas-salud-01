@@ -1,0 +1,34 @@
+/* Paleta y tipografia institucional IMSS-Bienestar, tomada de
+   legacy/propuesta-01-modulo-ce.html para mantener consistencia visual
+   entre la sub-herramienta de captura, el diagrama ER y este frontend. */
+:root {
+  --guinda: #9b2247;
+  --guinda-d: #611232;
+  --guinda-pale-bg: rgba(155, 34, 71, 0.09);
+  --guinda-pale-tx: #7a1b39;
+
+  --verde: #1e5b4f;
+  --verde-d: #002f2a;
+  --verde-pale-bg: rgba(30, 91, 79, 0.1);
+  --verde-pale-tx: #15453c;
+
+  --dorado: #a57f2c;
+  --dorado-l: #e6d194;
+  --dorado-pale-bg: rgba(165, 127, 44, 0.13);
+  --dorado-pale-tx: #7a5e20;
+
+  --black: #161a1d;
+  --gray: #98989a;
+  --gray-tx: #65656a;
+
+  --bone: #fbfaf7;
+  --paper: #ffffff;
+  --border: #e7e2d9;
+
+  --radius: 12px;
+  --radius-sm: 8px;
+
+  --font-display: 'Fraunces', serif;
+  --font-body: 'Manrope', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}

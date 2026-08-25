@@ -2,6 +2,13 @@
 
 > Formato y protocolo completo en `docs/protocolo-bitacora.md`. Entradas más recientes arriba.
 
+## 2026-08-24 — rama `jesus_sam` (6)
+
+**Resumen:** Arrancado el frontend (`frontend/`, React 19 + Vite). Sistema de diseño calcado de `legacy/propuesta-01-modulo-ce.html` (paleta guinda/verde/dorado, Fraunces+Manrope+JetBrains Mono). Autenticación real contra el backend (sesión por cookie + CSRF), Shell con nav condicionado por rol, página de Jornadas (lista + creación, solo admin_nacional/super_admin crean). Probado con Playwright en Chromium real, no solo revisión de código: redirect sin sesión, credenciales inválidas, login correcto, UI oculta según rol, logout, sesión persiste tras recargar.
+**Bloqueadores activos:** Ninguno. Nota operativa: en esta máquina el puerto 8000 ya lo usa otro proyecto tuyo ("backcontra"/Contrataciones) — el backend de Rutas_01 corre en el **8010** en desarrollo (`frontend/.env` ya apunta ahí). Si Jorge no tiene ese conflicto, puede usar 8000 normal, solo hay que ajustar `VITE_API_BASE_URL`.
+**Depende de / afecta a:** Añadí `CORS_ALLOW_CREDENTIALS`, `CSRF_TRUSTED_ORIGINS` y el endpoint `/api/auth/csrf/` al backend (necesarios para que el frontend funcione con cookies cross-port) — si Jorge ya había tocado `config/settings.py` o `usuarios/views.py`, revisar que no choque.
+**Próximo:** Vistas de Rutas y ProgramacionVisita (la captura real) — hoy son placeholders.
+
 ## 2026-08-24 — rama `jesus_sam` (5)
 
 **Resumen:** API DRF de `programacion` completa: `/api/jornadas/`, `/api/rutas/`, `/api/programacion-visitas/`. Probado con 8 escenarios reales vía django.test.Client (no solo revisión de código): solo admin_nacional/super_admin abren jornadas; la entidad de una ruta se fuerza server-side al crear (un usuario_entidad no puede "colar" otra entidad aunque la mande en el payload); la regla de "unidad no repetida en la misma jornada" se aplica también vía API; un usuario_entidad no puede programar sobre la ruta de otra entidad (400); admin_nacional lee todo pero no puede escribir (403); el listado queda aislado por entidad (zacatecas no ve nada de colima). **El módulo de programación queda funcionalmente completo a nivel backend.**

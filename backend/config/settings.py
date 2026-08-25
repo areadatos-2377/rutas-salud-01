@@ -120,3 +120,9 @@ CORS_ALLOWED_ORIGINS = [
     for o in os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:5173").split(",")
     if o.strip()
 ]
+# El frontend usa cookies de sesion (SessionAuthentication) desde otro puerto/origen
+# en desarrollo (5173 -> 8000), asi que el navegador necesita permiso explicito para
+# mandar/recibir esa cookie cross-origin, y Django necesita confiar en ese origen
+# para aceptar el POST protegido por CSRF.
+CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
