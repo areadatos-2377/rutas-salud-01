@@ -117,11 +117,13 @@ REST_FRAMEWORK = {
 
 CORS_ALLOWED_ORIGINS = [
     o.strip()
-    for o in os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+    # 5173 es el default de Vite, pero en esta maquina ya lo ocupa otro
+    # proyecto -- el frontend de Rutas_01 corre en 5183 (ver vite.config.js).
+    for o in os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:5183").split(",")
     if o.strip()
 ]
 # El frontend usa cookies de sesion (SessionAuthentication) desde otro puerto/origen
-# en desarrollo (5173 -> 8000), asi que el navegador necesita permiso explicito para
+# en desarrollo (5183 -> 8010), asi que el navegador necesita permiso explicito para
 # mandar/recibir esa cookie cross-origin, y Django necesita confiar en ese origen
 # para aceptar el POST protegido por CSRF.
 CORS_ALLOW_CREDENTIALS = True

@@ -11,7 +11,9 @@ copy .env.example .env
 npm run dev
 ```
 
-Necesita el backend corriendo en paralelo (`cd backend && python manage.py runserver`) — sin eso, login falla porque no hay a quién llamar.
+Arranca en **http://localhost:5183** (no 5173, el default de Vite — fijado en `vite.config.js` con `strictPort` porque en esta máquina el 5173 ya lo ocupa otro proyecto; si te choca en la tuya, cambia el puerto ahí y también `CORS_ALLOWED_ORIGINS` en `backend/.env`).
+
+Necesita el backend corriendo en paralelo (`cd backend && python manage.py runserver 8010`) — sin eso, login falla porque no hay a quién llamar.
 
 ## Autenticación
 
@@ -33,6 +35,5 @@ Necesita el backend corriendo en paralelo (`cd backend && python manage.py runse
 
 ## Pendiente (no bloquea lo ya construido)
 
-- Vistas de Rutas y ProgramacionVisita (la captura real) — por ahora son placeholders.
-- Vistas de catálogos (Entidades, Unidades médicas) para `super_admin` — placeholders.
-- Manejo de expiración de sesión más allá de un `catch` genérico.
+- Cambiar la propia contraseña desde el frontend (hoy solo vía el admin de Django en `/admin/`).
+- Vistas de evidencia (bloqueado por pendientes de negocio, ver `blueprint/blueprint-v01.md` sección 9).
