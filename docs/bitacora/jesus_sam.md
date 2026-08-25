@@ -2,6 +2,13 @@
 
 > Formato y protocolo completo en `docs/protocolo-bitacora.md`. Entradas más recientes arriba.
 
+## 2026-08-24 — rama `jesus_sam` (3)
+
+**Resumen:** Primer paso de la API DRF: `usuarios/permissions.py` (4 clases de permiso por rol, siguiendo blueprint-v01.md secciones 2-3) y endpoints de autenticación (`/api/auth/login/`, `/logout/`, `/me/`), session-based. Probado con `django.test.Client`: login, me, logout y bloqueo post-logout (403) funcionan.
+**Bloqueadores activos:** Ninguno.
+**Depende de / afecta a:** El resto de la API (catalogos, programacion) va a importar `usuarios/permissions.py` — si Jorge también va a escribir viewsets, que reutilice esas clases en vez de reinventar la lógica de roles.
+**Próximo:** Serializers/viewsets de `catalogos`, luego `programacion`.
+
 ## 2026-08-24 — rama `jesus_sam` (2)
 
 **Resumen:** Arrancado el backend Django (`backend/`): 5 apps (usuarios, catalogos, programacion, entregas, historico) con los modelos del diagrama ER, admin registrado, migraciones generadas y validadas contra SQLite (incluye prueba real de la regla "unidad no repetida en la misma jornada" y del histórico genérico vía ContentType). Decisiones aplicadas: CLUES como PK de UnidadMedica (con soporte de alta manual), sin usuario_id en ProgramacionVisita.
