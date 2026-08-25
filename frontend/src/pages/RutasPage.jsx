@@ -3,9 +3,8 @@ import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth, ROLES } from '../auth/AuthContext';
 import { exportarProgramacionExcel } from '../utils/exportarProgramacionExcel';
+import { CATEGORIA_LABEL } from '../utils/categoriaNiveles';
 import '../styles/table.css';
-
-const CATEGORIA_LABEL = { primer_nivel: 'Primer nivel', segundo_tercer_nivel: 'Segundo y tercer nivel' };
 
 export default function RutasPage() {
   const { usuario } = useAuth();

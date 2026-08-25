@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth, ROLES } from '../auth/AuthContext';
+import { CATEGORIA_LABEL } from '../utils/categoriaNiveles';
 import '../styles/table.css';
 
 const TIPO_LABEL = { ordinaria: 'Ordinaria', extraordinaria: 'Extraordinaria', emergencia: 'Emergencia' };
-const CATEGORIA_LABEL = { primer_nivel: 'Primer nivel', segundo_tercer_nivel: 'Segundo y tercer nivel' };
 const ESTATUS_BADGE = {
   planeada: 'gris',
   en_curso: 'verde',

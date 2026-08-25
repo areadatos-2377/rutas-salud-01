@@ -2,15 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api, ApiError } from '../api/client';
 import { useAuth, ROLES } from '../auth/AuthContext';
+import { NIVELES_POR_CATEGORIA, CATEGORIA_LABEL } from '../utils/categoriaNiveles';
 import '../styles/table.css';
-
-// Que niveles de UnidadMedica.nivel_atencion son programables en cada
-// categoria de jornada (blueprint: una jornada es de UNA sola categoria).
-const NIVELES_POR_CATEGORIA = {
-  primer_nivel: 'PRIMER NIVEL',
-  segundo_tercer_nivel: 'SEGUNDO NIVEL,TERCER NIVEL',
-};
-const CATEGORIA_LABEL = { primer_nivel: 'Primer nivel', segundo_tercer_nivel: 'Segundo y tercer nivel' };
 
 const CAMPOS_VACIOS = {
   clues: '',
