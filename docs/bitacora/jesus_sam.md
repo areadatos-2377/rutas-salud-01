@@ -2,6 +2,13 @@
 
 > Formato y protocolo completo en `docs/protocolo-bitacora.md`. Entradas más recientes arriba.
 
+## 2026-08-24 — rama `jesus_sam` (11)
+
+**Resumen:** Botón "Descargar Excel" en RutasPage (solo `usuario_entidad`) — exporta toda la programación de su entidad para la jornada seleccionada (todas sus rutas juntas), replicando el formato institucional real de `tools/captura-programacion/` pero con título y rango de fechas **dinámicos** (calculados de `Jornada.fecha_inicio/fecha_fin` en vez de hardcodeados). Backend: agregué filtro `?jornada=` a `/api/programacion-visitas/` y el campo `ruta_numero` de solo lectura (para la columna RUTAS, que combina varias rutas en un solo archivo). `exceljs` instalado como dependencia real de npm (no vendorizado a mano como en la sub-herramienta estática, porque aquí sí hay build step).
+**Bloqueadores activos:** Ninguno.
+**Depende de / afecta a:** Nada nuevo estructuralmente. `frontend/public/logos/` tiene copias de los logos institucionales (mismos que `docs/logos/`).
+**Próximo:** Pulido pendiente — paginación real en las listas del frontend, manejo de expiración de sesión.
+
 ## 2026-08-24 — rama `jesus_sam` (10)
 
 **Resumen:** Catálogo de coordinadores estatales. Backend: acción `PATCH /api/entidades/<id>/coordinador/` con permiso nuevo `PuedeEditarCoordinador` (admin_nacional o super_admin) — separado del resto del catálogo de Entidad (crear/borrar sigue siendo exclusivo de super_admin vía `SoloLecturaOSuperAdmin`). Frontend: `CoordinadoresPage` (editar en línea) + link de nav visible para admin_nacional y super_admin, protegido con `RequireRole`.

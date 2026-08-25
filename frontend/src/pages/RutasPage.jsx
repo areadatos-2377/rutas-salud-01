@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth, ROLES } from '../auth/AuthContext';
+import { exportarProgramacionExcel } from '../utils/exportarProgramacionExcel';
 import '../styles/table.css';
 
 function extraerLista(data) {
@@ -20,6 +21,7 @@ export default function RutasPage() {
   const [entidadId, setEntidadId] = useState('');
   const [error, setError] = useState(null);
   const [creando, setCreando] = useState(false);
+  const [exportando, setExportando] = useState(false);
 
   useEffect(() => {
     api.get('/api/jornadas/').then((data) => {
@@ -59,6 +61,23 @@ export default function RutasPage() {
     }
   }
 
+  async function onExportar() {
+    setExportando(true);
+    setError(null);
+    try {
+      const jornada = jornadas.find((j) => String(j.id) === jornadaId);
+      const [entidad, dataVisitas] = await Promise.all([
+        api.get(`/api/entidades/${usuario.entidad}/`),
+        api.get(`/api/programacion-visitas/?jornada=${jornadaId}`),
+      ]);
+      await exportarProgramacionExcel({ jornada, entidad, visitas: extraerLista(dataVisitas) });
+    } catch {
+      setError('No se pudo generar el Excel.');
+    } finally {
+      setExportando(false);
+    }
+  }
+
   return (
     <div>
       <div className="topbar">
@@ -66,6 +85,11 @@ export default function RutasPage() {
           <p className="crumb">Programación</p>
           <h2>Rutas</h2>
         </div>
+        {usuario?.rol === ROLES.USUARIO_ENTIDAD && jornadaId && (
+          <button className="btn-primary" onClick={onExportar} disabled={exportando} style={{ marginLeft: 'auto' }}>
+            {exportando ? 'Generando…' : 'Descargar Excel'}
+          </button>
+        )}
       </div>
 
       <div className="panel-form">

@@ -28,12 +28,14 @@ class RutaSerializer(serializers.ModelSerializer):
 
 class ProgramacionVisitaSerializer(serializers.ModelSerializer):
     unidad_medica_nombre = serializers.CharField(source="unidad_medica.nombre", read_only=True)
+    ruta_numero = serializers.CharField(source="ruta.numero_o_nombre", read_only=True)
 
     class Meta:
         model = ProgramacionVisita
         fields = [
             "id",
             "ruta",
+            "ruta_numero",
             "unidad_medica",
             "unidad_medica_nombre",
             "fecha_distribucion_programada",

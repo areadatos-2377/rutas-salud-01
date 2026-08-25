@@ -55,4 +55,9 @@ class ProgramacionVisitaViewSet(viewsets.ModelViewSet):
         ruta_id = self.request.query_params.get("ruta")
         if ruta_id:
             qs = qs.filter(ruta_id=ruta_id)
+        jornada_id = self.request.query_params.get("jornada")
+        if jornada_id:
+            # Todas las visitas de la jornada (a traves de todas sus rutas) --
+            # lo usa el frontend para el export a Excel por entidad+jornada.
+            qs = qs.filter(ruta__jornada_id=jornada_id)
         return qs
