@@ -43,7 +43,11 @@ export default function ProgramacionVisitaPage() {
       // getAll: entidades grandes tienen cientos/miles de unidades medicas --
       // con paginacion normal, el autocompletado solo hubiera mostrado las
       // primeras 50 y el resto habria sido invisible para quien captura.
-      api.getAll(`/api/unidades-medicas/?entidad=${r.entidad}`).then(setUnidades);
+      // nivel_atencion=PRIMER NIVEL: el catalogo administrativo ya incluye
+      // los 3 niveles, pero la programacion de distribucion sigue siendo
+      // solo para unidades de primer nivel (blueprint-v01.md seccion 1).
+      const params = new URLSearchParams({ entidad: r.entidad, nivel_atencion: 'PRIMER NIVEL' });
+      api.getAll(`/api/unidades-medicas/?${params}`).then(setUnidades);
     });
     cargarVisitas();
     // eslint-disable-next-line react-hooks/exhaustive-deps

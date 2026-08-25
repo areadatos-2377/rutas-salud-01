@@ -41,4 +41,7 @@ class UnidadMedicaViewSet(viewsets.ModelViewSet):
         entidad_id = self.request.query_params.get("entidad")
         if entidad_id:
             qs = qs.filter(entidad_id=entidad_id)
+        nivel_atencion = self.request.query_params.get("nivel_atencion")
+        if nivel_atencion:
+            qs = qs.filter(nivel_atencion=nivel_atencion)
         return qs

@@ -3,10 +3,13 @@ import { api } from '../api/client';
 import '../styles/table.css';
 
 const FORM_VACIO = { clues: '', nombre: '', entidad: '', tipo_unidad_medica: '', municipio: '' };
+const NIVELES = ['PRIMER NIVEL', 'SEGUNDO NIVEL', 'TERCER NIVEL'];
+const NIVEL_BADGE = { 'PRIMER NIVEL': 'verde', 'SEGUNDO NIVEL': 'dorado', 'TERCER NIVEL': 'guinda' };
 
 export default function UnidadesMedicasPage() {
   const [entidades, setEntidades] = useState([]);
   const [filtroEntidad, setFiltroEntidad] = useState('');
+  const [filtroNivel, setFiltroNivel] = useState('');
   // El catálogo completo puede tener miles de filas (9,460 a la fecha) --
   // a diferencia del resto de las listas de la app, aquí sí hace falta
   // paginación real en vez de traer todo de un jalón.
@@ -24,6 +27,7 @@ export default function UnidadesMedicasPage() {
     setResultado(null);
     const params = new URLSearchParams({ page: String(paginaObjetivo) });
     if (filtroEntidad) params.set('entidad', filtroEntidad);
+    if (filtroNivel) params.set('nivel_atencion', filtroNivel);
     const data = await api.get(`/api/unidades-medicas/?${params}`);
     setResultado(data);
   }
@@ -32,7 +36,7 @@ export default function UnidadesMedicasPage() {
     setPagina(1);
     cargar(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtroEntidad]);
+  }, [filtroEntidad, filtroNivel]);
 
   function irAPagina(n) {
     setPagina(n);
@@ -72,6 +76,15 @@ export default function UnidadesMedicasPage() {
             <option value="">Todas</option>
             {entidades.map((ent) => (
               <option key={ent.id} value={ent.id}>{ent.nombre}</option>
+            ))}
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="filtroNivel">Nivel de atención</label>
+          <select id="filtroNivel" value={filtroNivel} onChange={(e) => setFiltroNivel(e.target.value)}>
+            <option value="">Todos</option>
+            {NIVELES.map((n) => (
+              <option key={n} value={n}>{n}</option>
             ))}
           </select>
         </div>
@@ -127,22 +140,26 @@ export default function UnidadesMedicasPage() {
               <th>CLUES</th>
               <th>Nombre</th>
               <th>Entidad</th>
+              <th>Nivel de atención</th>
               <th>Tipo</th>
               <th>Origen</th>
             </tr>
           </thead>
           <tbody>
             {resultado === null && (
-              <tr><td colSpan={5} className="tabla-vacia">Cargando…</td></tr>
+              <tr><td colSpan={6} className="tabla-vacia">Cargando…</td></tr>
             )}
             {resultado?.results.length === 0 && (
-              <tr><td colSpan={5} className="tabla-vacia">No hay unidades médicas.</td></tr>
+              <tr><td colSpan={6} className="tabla-vacia">No hay unidades médicas.</td></tr>
             )}
             {resultado?.results.map((u) => (
               <tr key={u.clues}>
                 <td>{u.clues}</td>
                 <td className="nombre">{u.nombre}</td>
                 <td>{entidades.find((e) => e.id === u.entidad)?.nombre || u.entidad}</td>
+                <td>
+                  <span className={`badge ${NIVEL_BADGE[u.nivel_atencion] || 'gris'}`}>{u.nivel_atencion}</span>
+                </td>
                 <td>{u.tipo_unidad_medica}</td>
                 <td>
                   <span className={`badge ${u.origen === 'manual' ? 'dorado' : 'verde'}`}>

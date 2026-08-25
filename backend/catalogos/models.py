@@ -22,6 +22,15 @@ class UnidadMedica(models.Model):
         (ORIGEN_MANUAL, "Capturado manualmente"),
     ]
 
+    NIVEL_PRIMER = "PRIMER NIVEL"
+    NIVEL_SEGUNDO = "SEGUNDO NIVEL"
+    NIVEL_TERCER = "TERCER NIVEL"
+    NIVEL_ATENCION_CHOICES = [
+        (NIVEL_PRIMER, "Primer nivel"),
+        (NIVEL_SEGUNDO, "Segundo nivel"),
+        (NIVEL_TERCER, "Tercer nivel"),
+    ]
+
     # CLUES como llave primaria (decisión 2026-08-24, ver blueprint/diagrama-er-v01.md).
     # El catálogo mensual no cubre todos los CLUES reales de programación, por lo que
     # esta tabla también admite altas manuales (origen=manual) para no bloquear la
@@ -32,6 +41,13 @@ class UnidadMedica(models.Model):
     tipo_unidad_medica = models.CharField(max_length=50, blank=True)
     municipio = models.CharField(max_length=100, blank=True)
     origen = models.CharField(max_length=20, choices=ORIGEN_CHOICES, default=ORIGEN_MANUAL)
+    # Viene tal cual de la columna "NIVEL ATENCION" de CLUES_IMB.xlsx. El
+    # catalogo mensual solo importa PRIMER/SEGUNDO/TERCER NIVEL (excluye
+    # "NO APLICA" de la fuente) -- decision 2026-08-24, amplia el alcance
+    # original de blueprint-v00 que solo consideraba primer nivel.
+    nivel_atencion = models.CharField(
+        max_length=20, choices=NIVEL_ATENCION_CHOICES, default=NIVEL_PRIMER
+    )
 
     class Meta:
         verbose_name = "unidad médica"

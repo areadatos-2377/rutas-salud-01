@@ -12,4 +12,12 @@ class EntidadSerializer(serializers.ModelSerializer):
 class UnidadMedicaSerializer(serializers.ModelSerializer):
     class Meta:
         model = UnidadMedica
-        fields = ["clues", "nombre", "entidad", "tipo_unidad_medica", "municipio", "origen"]
+        fields = [
+            "clues",
+            "nombre",
+            "entidad",
+            "tipo_unidad_medica",
+            "municipio",
+            "origen",
+            "nivel_atencion",
+        ]

@@ -33,7 +33,14 @@ BASE_DIR = Path(__file__).resolve().parents[4]
 CLUES_XLSX = BASE_DIR / "data" / "raw" / "CLUES_IMB.xlsx"
 ENTIDADES_XLSX = BASE_DIR / "data" / "raw" / "ejemplo_6ta_distribucion_BC.xlsx"
 
-NIVEL_ATENCION_ESPERADO = "PRIMER NIVEL"
+# Decision 2026-08-24: se amplia de solo primer nivel (blueprint-v00) a los
+# 3 niveles reales de la fuente -- excluye "NO APLICA", que en CLUES_IMB.xlsx
+# corresponde a registros administrativos, no unidades de atencion.
+NIVELES_ATENCION_ESPERADOS = {
+    UnidadMedica.NIVEL_PRIMER,
+    UnidadMedica.NIVEL_SEGUNDO,
+    UnidadMedica.NIVEL_TERCER,
+}
 ESTATUS_ESPERADO = "EN OPERACION"
 
 ALIAS_ENTIDAD = {
@@ -134,7 +141,8 @@ class Command(BaseCommand):
 
         for row in ws.iter_rows(min_row=2, values_only=True):
             total_leidas += 1
-            if row[idx["NIVEL ATENCION"]] != NIVEL_ATENCION_ESPERADO:
+            nivel_atencion = row[idx["NIVEL ATENCION"]]
+            if nivel_atencion not in NIVELES_ATENCION_ESPERADOS:
                 continue
             if row[idx["ESTATUS DE OPERACION"]] != ESTATUS_ESPERADO:
                 continue
@@ -157,6 +165,7 @@ class Command(BaseCommand):
                 "tipo_unidad_medica": mapear_tipo_unidad_medica(tipologia),
                 "municipio": row[idx["MUNICIPIO"]] or "",
                 "origen": UnidadMedica.ORIGEN_CATALOGO_MENSUAL,
+                "nivel_atencion": nivel_atencion,
             }
 
             anterior = UnidadMedica.objects.filter(pk=clues).first()

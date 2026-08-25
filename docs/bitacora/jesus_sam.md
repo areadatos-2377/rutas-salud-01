@@ -2,6 +2,13 @@
 
 > Formato y protocolo completo en `docs/protocolo-bitacora.md`. Entradas más recientes arriba.
 
+## 2026-08-24 — rama `jesus_sam` (13)
+
+**Resumen:** Campo `nivel_atencion` en `UnidadMedica` (PRIMER/SEGUNDO/TERCER NIVEL, de la columna "NIVEL ATENCION" del Excel) — a petición del usuario, visible y filtrable en `UnidadesMedicasPage`. Le pregunté si ampliábamos el catálogo a los 3 niveles o solo mostrábamos el atributo manteniendo el filtro a primer nivel; eligió ampliar. `cargar_clues` ahora importa los 3 niveles (antes solo primer nivel) — catálogo real pasó de 9,460 a 10,136 unidades. **Importante:** el módulo de programación (captura de `ProgramacionVisita`) sigue restringido a solo primer nivel — el autocompletado de CLUES en la captura manda `?nivel_atencion=PRIMER NIVEL` explícitamente, para que ampliar el catálogo administrativo no cambie el alcance del programa de distribución (blueprint-v01.md sección 1).
+**Bloqueadores activos:** Ninguno.
+**Depende de / afecta a:** Si Jorge toca el catálogo de unidades médicas o el autocompletado de la captura, ojo con no perder ese filtro `nivel_atencion=PRIMER NIVEL` en la captura — sin él, alguien podría programar distribución hacia un hospital de segundo/tercer nivel, que está fuera del alcance del programa.
+**Próximo:** A decidir con el usuario — cerrar pendientes de negocio de blueprint-v01 sección 9 antes de evidencia, o seguir puliendo.
+
 ## 2026-08-24 — rama `jesus_sam` (12)
 
 **Resumen:** Pulido final de la sesión: paginación y expiración de sesión. `api.getAll()` en el cliente HTTP sigue `next` hasta traer la lista completa — se usa donde faltar datos por paginación silenciosa sería un bug real (autocompletado de CLUES, export a Excel), y `UnidadesMedicasPage` tiene paginación real (Anterior/Siguiente) porque es la única lista que puede crecer a miles (9,460 hoy). **Bug real encontrado con la prueba en navegador**: DRF con `SessionAuthentication` regresa 403 (no 401) para "no autenticado en absoluto" por default (esa clase no define `WWW-Authenticate`) — mi primer intento de manejar expiración de sesión basado en detectar 401 nunca disparaba. Corregido con `usuarios/authentication.py::SessionAuthenticationCon401`, que sí distingue "no autenticado" (401, fuerza logout+redirect) de "autenticado sin permiso de rol" (403, no toca la sesión).
