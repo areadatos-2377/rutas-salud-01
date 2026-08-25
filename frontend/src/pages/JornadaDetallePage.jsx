@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { api, ApiError } from '../api/client';
 import { useAuth, ROLES } from '../auth/AuthContext';
 import { NIVELES_POR_CATEGORIA, CATEGORIA_LABEL } from '../utils/categoriaNiveles';
+import { exportarProgramacionExcel } from '../utils/exportarProgramacionExcel';
 import '../styles/table.css';
 import './JornadaDetallePage.css';
 
@@ -67,10 +68,15 @@ export default function JornadaDetallePage() {
   // ---- Agregar unidad a una ruta (una a la vez, catálogo de CLUES cacheado por entidad) ----
   const [catalogoUnidadesPorEntidad, setCatalogoUnidadesPorEntidad] = useState({});
   const [rutaAgregandoUnidadId, setRutaAgregandoUnidadId] = useState(null);
+  const [editandoVisitaId, setEditandoVisitaId] = useState(null);
   const [formUnidad, setFormUnidad] = useState(CAMPOS_VACIOS_UNIDAD);
   const [autocompletadoUnidad, setAutocompletadoUnidad] = useState(false);
   const [guardandoUnidad, setGuardandoUnidad] = useState(false);
   const [errorUnidad, setErrorUnidad] = useState(null);
+
+  // ---- Descargar Excel (solo usuario_entidad) ----
+  const [exportando, setExportando] = useState(false);
+  const [errorExportar, setErrorExportar] = useState(null);
 
   async function cargarDetalle() {
     try {
@@ -137,21 +143,46 @@ export default function JornadaDetallePage() {
     await cargarDetalle();
   }
 
+  async function cargarCatalogoUnidad(ruta) {
+    if (catalogoUnidadesPorEntidad[ruta.entidad]) return;
+    const nivelesPermitidos = NIVELES_POR_CATEGORIA[ruta.jornada_categoria] || 'PRIMER NIVEL';
+    const params = new URLSearchParams({ entidad: ruta.entidad, nivel_atencion: nivelesPermitidos });
+    const lista = await api.getAll(`/api/unidades-medicas/?${params}`);
+    setCatalogoUnidadesPorEntidad((prev) => ({ ...prev, [ruta.entidad]: lista }));
+  }
+
   async function onAbrirFormUnidad(ruta) {
     setRutaAgregandoUnidadId(ruta.id);
+    setEditandoVisitaId(null);
     setFormUnidad(CAMPOS_VACIOS_UNIDAD);
     setAutocompletadoUnidad(false);
     setErrorUnidad(null);
-    if (!catalogoUnidadesPorEntidad[ruta.entidad]) {
-      const nivelesPermitidos = NIVELES_POR_CATEGORIA[ruta.jornada_categoria] || 'PRIMER NIVEL';
-      const params = new URLSearchParams({ entidad: ruta.entidad, nivel_atencion: nivelesPermitidos });
-      const lista = await api.getAll(`/api/unidades-medicas/?${params}`);
-      setCatalogoUnidadesPorEntidad((prev) => ({ ...prev, [ruta.entidad]: lista }));
-    }
+    await cargarCatalogoUnidad(ruta);
+  }
+
+  async function onEditarUnidad(ruta, visita) {
+    setRutaAgregandoUnidadId(ruta.id);
+    setEditandoVisitaId(visita.id);
+    setAutocompletadoUnidad(true);
+    setErrorUnidad(null);
+    setFormUnidad({
+      clues: visita.unidad_medica,
+      unidad_medica_nombre: visita.unidad_medica_nombre,
+      tipo_unidad_medica: visita.tipo_unidad_medica || '',
+      fecha_distribucion_programada: visita.fecha_distribucion_programada,
+      claves_a_desplazar: visita.claves_a_desplazar,
+      piezas_medicamento: visita.piezas_medicamento,
+      piezas_material_curacion: visita.piezas_material_curacion,
+      quien_recibe: visita.quien_recibe || '',
+      telefono: visita.telefono || '',
+      correo: visita.correo || '',
+    });
+    await cargarCatalogoUnidad(ruta);
   }
 
   function onCancelarFormUnidad() {
     setRutaAgregandoUnidadId(null);
+    setEditandoVisitaId(null);
     setFormUnidad(CAMPOS_VACIOS_UNIDAD);
     setAutocompletadoUnidad(false);
     setErrorUnidad(null);
@@ -175,7 +206,7 @@ export default function JornadaDetallePage() {
     }
   }
 
-  async function onCrearUnidad(e, ruta) {
+  async function onGuardarUnidad(e, ruta) {
     e.preventDefault();
     setGuardandoUnidad(true);
     setErrorUnidad(null);
@@ -192,10 +223,12 @@ export default function JornadaDetallePage() {
       correo: formUnidad.correo,
     };
     try {
-      await api.post('/api/programacion-visitas/', cuerpo);
-      setRutaAgregandoUnidadId(null);
-      setFormUnidad(CAMPOS_VACIOS_UNIDAD);
-      setAutocompletadoUnidad(false);
+      if (editandoVisitaId) {
+        await api.patch(`/api/programacion-visitas/${editandoVisitaId}/`, cuerpo);
+      } else {
+        await api.post('/api/programacion-visitas/', cuerpo);
+      }
+      onCancelarFormUnidad();
       await cargarDetalle();
     } catch (err) {
       if (err instanceof ApiError && err.data) {
@@ -213,6 +246,25 @@ export default function JornadaDetallePage() {
     if (!confirm('¿Eliminar esta unidad programada?')) return;
     await api.del(`/api/programacion-visitas/${visitaId}/`);
     await cargarDetalle();
+  }
+
+  async function onExportar() {
+    setExportando(true);
+    setErrorExportar(null);
+    try {
+      // getAll aqui es obligatorio: un Excel de cumplimiento que le faltaran
+      // filas por paginacion silenciosa seria un problema serio, no solo un
+      // detalle de UX.
+      const [entidad, visitas] = await Promise.all([
+        api.get(`/api/entidades/${usuario.entidad}/`),
+        api.getAll(`/api/programacion-visitas/?jornada=${id}`),
+      ]);
+      await exportarProgramacionExcel({ jornada, entidad, visitas });
+    } catch {
+      setErrorExportar('No se pudo generar el Excel.');
+    } finally {
+      setExportando(false);
+    }
   }
 
   return (
@@ -233,12 +285,22 @@ export default function JornadaDetallePage() {
             </p>
           )}
         </div>
-        {puedeEscribir && jornada && !mostrarFormRuta && (
-          <button className="btn-primary" onClick={onAbrirFormRuta} style={{ marginLeft: 'auto' }}>
-            + Agregar ruta
-          </button>
+        {jornada && (
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 10 }}>
+            {usuario?.rol === ROLES.USUARIO_ENTIDAD && (
+              <button className="btn-ghost" onClick={onExportar} disabled={exportando}>
+                {exportando ? 'Generando…' : 'Descargar Excel'}
+              </button>
+            )}
+            {puedeEscribir && !mostrarFormRuta && (
+              <button className="btn-primary" onClick={onAbrirFormRuta}>
+                + Agregar ruta
+              </button>
+            )}
+          </div>
         )}
       </div>
+      {errorExportar && <p className="login-error" style={{ maxWidth: 400 }}>{errorExportar}</p>}
 
       {mostrarFormRuta && (
         <form className="panel-form" onSubmit={onCrearRuta}>
@@ -330,15 +392,12 @@ export default function JornadaDetallePage() {
                     </button>
                   </>
                 )}
-                <Link className="btn-ghost" to={`/rutas/${ruta.id}`}>
-                  Editar →
-                </Link>
               </div>
 
               {rutaAgregandoUnidadId === ruta.id && (
                 <form
                   className="panel-form"
-                  onSubmit={(e) => onCrearUnidad(e, ruta)}
+                  onSubmit={(e) => onGuardarUnidad(e, ruta)}
                   style={{ flexWrap: 'wrap', marginLeft: 4 }}
                 >
                   <div className="field" style={{ minWidth: 220 }}>
@@ -349,6 +408,7 @@ export default function JornadaDetallePage() {
                       placeholder="Busca por CLUES o nombre…"
                       value={autocompletadoUnidad ? `${formUnidad.clues} · ${formUnidad.unidad_medica_nombre}` : formUnidad.clues}
                       onChange={(e) => onCluesChangeUnidad(ruta, e.target.value)}
+                      disabled={Boolean(editandoVisitaId)}
                       required
                     />
                     <datalist id={`datalist-clues-${ruta.id}`}>
@@ -423,7 +483,7 @@ export default function JornadaDetallePage() {
                     />
                   </div>
                   <button className="btn-primary" type="submit" disabled={guardandoUnidad}>
-                    {guardandoUnidad ? 'Guardando…' : '+ Agregar'}
+                    {guardandoUnidad ? 'Guardando…' : editandoVisitaId ? 'Guardar cambios' : '+ Agregar'}
                   </button>
                   <button className="btn-ghost" type="button" onClick={onCancelarFormUnidad}>
                     Cancelar
@@ -471,9 +531,14 @@ export default function JornadaDetallePage() {
                           <td>{v.correo}</td>
                           <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                             {puedeEscribir && (
-                              <button className="btn-ghost" onClick={() => onEliminarUnidad(v.id)}>
-                                Eliminar
-                              </button>
+                              <>
+                                <button className="btn-ghost" onClick={() => onEditarUnidad(ruta, v)} style={{ marginRight: 6 }}>
+                                  Editar
+                                </button>
+                                <button className="btn-ghost" onClick={() => onEliminarUnidad(v.id)}>
+                                  Eliminar
+                                </button>
+                              </>
                             )}
                           </td>
                         </tr>

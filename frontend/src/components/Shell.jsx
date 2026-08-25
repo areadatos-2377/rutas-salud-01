@@ -9,13 +9,6 @@ const ICONOS = {
       <path d="M16 2v4M8 2v4M3 10h18" />
     </svg>
   ),
-  rutas: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-      <circle cx="6" cy="19" r="2" />
-      <circle cx="18" cy="5" r="2" />
-      <path d="M8.5 17.5 15.5 6.5" />
-    </svg>
-  ),
   catalogos: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
       <path d="M3 7l9-4 9 4-9 4-9-4Z" />
@@ -59,9 +52,6 @@ export default function Shell() {
           <div className="nav-section">Programación</div>
           <NavLink to="/jornadas" className="nav-item">
             {ICONOS.jornadas} Jornadas
-          </NavLink>
-          <NavLink to="/rutas" className="nav-item">
-            {ICONOS.rutas} Rutas
           </NavLink>
           {(usuario?.rol === ROLES.ADMIN_NACIONAL || usuario?.rol === ROLES.SUPER_ADMIN) && (
             <>

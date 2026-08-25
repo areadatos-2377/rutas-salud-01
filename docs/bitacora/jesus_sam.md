@@ -2,6 +2,16 @@
 
 > Formato y protocolo completo en `docs/protocolo-bitacora.md`. Entradas más recientes arriba.
 
+## 2026-08-25 — rama `jesus_sam` (17)
+
+**Resumen:** El usuario probó la entrada (16) y, con razón, notó que la pestaña "Rutas" y el link "Editar →" ya sobraban una vez que se puede crear/eliminar todo desde `JornadaDetallePage`. Antes de borrarlos le pregunté explícitamente cómo quería seguir corrigiendo un dato de una unidad ya capturada (teléfono, quién recibe, etc.) sin esa pantalla — eligió edición inline en vez de "borrar y volver a capturar". Con eso resuelto: agregué botón "Editar" por fila en la tabla de unidades (precarga el formulario de "+ Agregar unidad", con CLUES bloqueado igual que antes, y guarda con PATCH en vez de POST), moví el botón "Descargar Excel" al topbar de esta misma vista (antes vivía en `RutasPage`, solo lo ve `usuario_entidad`), y eliminé por completo `RutasPage.jsx`, `ProgramacionVisitaPage.jsx`, las rutas `/rutas` y `/rutas/:id` en `App.jsx`, y el link+ícono "Rutas" del nav en `Shell.jsx` — verifiqué con grep que ningún otro archivo los seguía referenciando antes de borrar, y corrí `npm run build` al final para confirmar que no quedó ningún import roto.
+
+Probado con Playwright real: el nav ya no muestra "Rutas", el encabezado de cada ruta ya no tiene "Editar →", editar el teléfono de una unidad existente con el botón nuevo deja el campo CLUES bloqueado y el cambio se refleja tanto en la tabla como directo en la base de datos (lo verifiqué con `manage.py shell`, no solo en pantalla), y "Descargar Excel" dispara la descarga desde la nueva ubicación sin errores de consola.
+
+**Bloqueadores activos:** Ninguno.
+**Depende de / afecta a:** Si Jorge tenía algún link o marcador a `/rutas` o `/rutas/:id`, esas rutas ya no existen — todo vive ahora en `/jornadas/:id`.
+**Próximo:** A decidir con el usuario.
+
 ## 2026-08-25 — rama `jesus_sam` (16)
 
 **Resumen:** `JornadaDetallePage` ahora permite crear y eliminar rutas/unidades sin salir de la vista — a petición del usuario, que notó la fricción de ir y venir entre Jornadas → Rutas → ProgramacionVisita solo para armar una ruta. Agregué botón global "+ Agregar ruta" (con selector de entidad solo para `super_admin`, igual patrón que `RutasPage`), botón "+ Agregar unidad" por bloque de ruta (mismo autocompletado de CLUES que `ProgramacionVisitaPage`, pero con el catálogo cacheado por entidad porque una jornada nacional puede mostrar rutas de varias entidades a la vez en la misma pantalla), y botones "Eliminar ruta"/"Eliminar" por unidad. Deliberadamente NO incluí edición inline de una visita ya existente — el pedido explícito era "agregar y eliminar", así que para editar sigue estando el link "Editar →" a la página de captura de siempre. De paso extraje `frontend/src/utils/categoriaNiveles.js` (antes `NIVELES_POR_CATEGORIA`/`CATEGORIA_LABEL` estaban copiados y pegados en 4 páginas distintas).
