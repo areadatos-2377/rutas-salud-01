@@ -2,6 +2,13 @@
 
 > Formato y protocolo completo en `docs/protocolo-bitacora.md`. Entradas más recientes arriba.
 
+## 2026-08-24 — rama `jesus_sam` (4)
+
+**Resumen:** API DRF de `catalogos`: `/api/entidades/` y `/api/unidades-medicas/` (con filtro `?entidad=<id>` para poblar selects como hace tools/captura-programacion/). Probado con django.test.Client: super_admin escribe, usuario_entidad solo lee (403 al intentar crear), el filtro por entidad devuelve exactamente lo esperado.
+**Bloqueadores activos:** Ninguno.
+**Depende de / afecta a:** Nada nuevo — sigue el mismo patrón de permisos del paso anterior.
+**Próximo:** Serializers/viewsets de `programacion` (Jornada, Ruta, ProgramacionVisita) — esta es la parte que reintroduce la validación de "unidad no repetida en la misma jornada" y el escenario multi-entidad.
+
 ## 2026-08-24 — rama `jesus_sam` (3)
 
 **Resumen:** Primer paso de la API DRF: `usuarios/permissions.py` (4 clases de permiso por rol, siguiendo blueprint-v01.md secciones 2-3) y endpoints de autenticación (`/api/auth/login/`, `/logout/`, `/me/`), session-based. Probado con `django.test.Client`: login, me, logout y bloqueo post-logout (403) funcionan.
