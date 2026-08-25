@@ -3,12 +3,15 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from catalogos.views import EntidadViewSet, UnidadMedicaViewSet
+from programacion.views import JornadaViewSet, ProgramacionVisitaViewSet, RutaViewSet
 from usuarios.views import cerrar_sesion, iniciar_sesion, yo
 
 router = DefaultRouter()
 router.register("entidades", EntidadViewSet)
 router.register("unidades-medicas", UnidadMedicaViewSet)
-# Los viewsets de programacion se registran aqui conforme se construyen.
+router.register("jornadas", JornadaViewSet)
+router.register("rutas", RutaViewSet)
+router.register("programacion-visitas", ProgramacionVisitaViewSet)
 
 urlpatterns = [
     path("admin/", admin.site.urls),

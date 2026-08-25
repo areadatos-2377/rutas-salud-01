@@ -2,6 +2,13 @@
 
 > Formato y protocolo completo en `docs/protocolo-bitacora.md`. Entradas más recientes arriba.
 
+## 2026-08-24 — rama `jesus_sam` (5)
+
+**Resumen:** API DRF de `programacion` completa: `/api/jornadas/`, `/api/rutas/`, `/api/programacion-visitas/`. Probado con 8 escenarios reales vía django.test.Client (no solo revisión de código): solo admin_nacional/super_admin abren jornadas; la entidad de una ruta se fuerza server-side al crear (un usuario_entidad no puede "colar" otra entidad aunque la mande en el payload); la regla de "unidad no repetida en la misma jornada" se aplica también vía API; un usuario_entidad no puede programar sobre la ruta de otra entidad (400); admin_nacional lee todo pero no puede escribir (403); el listado queda aislado por entidad (zacatecas no ve nada de colima). **El módulo de programación queda funcionalmente completo a nivel backend.**
+**Bloqueadores activos:** Ninguno.
+**Depende de / afecta a:** Con esto ya hay API real para que el frontend React consuma. Si Jorge empieza el frontend, los endpoints son `/api/auth/{login,logout,me}/`, `/api/entidades/`, `/api/unidades-medicas/?entidad=`, `/api/jornadas/`, `/api/rutas/`, `/api/programacion-visitas/` — todos requieren sesión iniciada (cookie), no hay token/JWT todavía.
+**Próximo:** A elegir: arrancar el frontend React, o cerrar los pendientes de negocio de blueprint-v01.md sección 9 antes de diseñar evidencia.
+
 ## 2026-08-24 — rama `jesus_sam` (4)
 
 **Resumen:** API DRF de `catalogos`: `/api/entidades/` y `/api/unidades-medicas/` (con filtro `?entidad=<id>` para poblar selects como hace tools/captura-programacion/). Probado con django.test.Client: super_admin escribe, usuario_entidad solo lee (403 al intentar crear), el filtro por entidad devuelve exactamente lo esperado.
