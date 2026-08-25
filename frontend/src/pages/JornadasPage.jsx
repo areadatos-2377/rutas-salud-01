@@ -11,10 +11,6 @@ const ESTATUS_BADGE = {
   cancelada: 'guinda',
 };
 
-function extraerLista(data) {
-  return Array.isArray(data) ? data : data.results;
-}
-
 export default function JornadasPage() {
   const { usuario } = useAuth();
   const puedeCrear = usuario?.rol === ROLES.ADMIN_NACIONAL || usuario?.rol === ROLES.SUPER_ADMIN;
@@ -28,8 +24,7 @@ export default function JornadasPage() {
 
   async function cargar() {
     try {
-      const data = await api.get('/api/jornadas/');
-      setJornadas(extraerLista(data));
+      setJornadas(await api.getAll('/api/jornadas/'));
     } catch {
       setError('No se pudieron cargar las jornadas.');
     }

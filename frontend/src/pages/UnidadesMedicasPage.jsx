@@ -2,34 +2,42 @@ import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import '../styles/table.css';
 
-function extraerLista(data) {
-  return Array.isArray(data) ? data : data.results;
-}
-
 const FORM_VACIO = { clues: '', nombre: '', entidad: '', tipo_unidad_medica: '', municipio: '' };
 
 export default function UnidadesMedicasPage() {
   const [entidades, setEntidades] = useState([]);
   const [filtroEntidad, setFiltroEntidad] = useState('');
-  const [unidades, setUnidades] = useState(null);
+  // El catálogo completo puede tener miles de filas (9,460 a la fecha) --
+  // a diferencia del resto de las listas de la app, aquí sí hace falta
+  // paginación real en vez de traer todo de un jalón.
+  const [pagina, setPagina] = useState(1);
+  const [resultado, setResultado] = useState(null); // {count, next, previous, results}
   const [form, setForm] = useState(FORM_VACIO);
   const [error, setError] = useState(null);
   const [guardando, setGuardando] = useState(false);
 
   useEffect(() => {
-    api.get('/api/entidades/').then((data) => setEntidades(extraerLista(data)));
+    api.getAll('/api/entidades/').then(setEntidades);
   }, []);
 
-  async function cargar() {
-    const path = filtroEntidad ? `/api/unidades-medicas/?entidad=${filtroEntidad}` : '/api/unidades-medicas/';
-    const data = await api.get(path);
-    setUnidades(extraerLista(data));
+  async function cargar(paginaObjetivo) {
+    setResultado(null);
+    const params = new URLSearchParams({ page: String(paginaObjetivo) });
+    if (filtroEntidad) params.set('entidad', filtroEntidad);
+    const data = await api.get(`/api/unidades-medicas/?${params}`);
+    setResultado(data);
   }
 
   useEffect(() => {
-    cargar();
+    setPagina(1);
+    cargar(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtroEntidad]);
+
+  function irAPagina(n) {
+    setPagina(n);
+    cargar(n);
+  }
 
   async function onCrear(e) {
     e.preventDefault();
@@ -38,13 +46,15 @@ export default function UnidadesMedicasPage() {
     try {
       await api.post('/api/unidades-medicas/', { ...form, entidad: Number(form.entidad), origen: 'manual' });
       setForm(FORM_VACIO);
-      await cargar();
+      await cargar(pagina);
     } catch (err) {
       setError(err?.data?.clues?.[0] || 'No se pudo crear la unidad médica.');
     } finally {
       setGuardando(false);
     }
   }
+
+  const totalPaginas = resultado ? Math.max(1, Math.ceil(resultado.count / 50)) : 1;
 
   return (
     <div>
@@ -122,13 +132,13 @@ export default function UnidadesMedicasPage() {
             </tr>
           </thead>
           <tbody>
-            {unidades === null && (
+            {resultado === null && (
               <tr><td colSpan={5} className="tabla-vacia">Cargando…</td></tr>
             )}
-            {unidades?.length === 0 && (
+            {resultado?.results.length === 0 && (
               <tr><td colSpan={5} className="tabla-vacia">No hay unidades médicas.</td></tr>
             )}
-            {unidades?.map((u) => (
+            {resultado?.results.map((u) => (
               <tr key={u.clues}>
                 <td>{u.clues}</td>
                 <td className="nombre">{u.nombre}</td>
@@ -143,6 +153,21 @@ export default function UnidadesMedicasPage() {
             ))}
           </tbody>
         </table>
+        {resultado && resultado.count > 0 && (
+          <div className="tfoot">
+            <span>
+              {resultado.count} unidades · página {pagina} de {totalPaginas}
+            </span>
+            <div className="pages">
+              <button className="btn-ghost" disabled={!resultado.previous} onClick={() => irAPagina(pagina - 1)}>
+                ← Anterior
+              </button>
+              <button className="btn-ghost" disabled={!resultado.next} onClick={() => irAPagina(pagina + 1)}>
+                Siguiente →
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

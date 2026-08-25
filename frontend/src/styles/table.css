@@ -76,3 +76,27 @@ tbody tr:hover {
   color: var(--gray-tx);
   padding: 28px 18px;
 }
+
+.tfoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  font-size: 12px;
+  color: var(--gray-tx);
+  border-top: 1px solid var(--border);
+  background: #fcfbf8;
+}
+.tfoot .pages {
+  display: flex;
+  gap: 8px;
+}
+.tfoot .pages button {
+  height: 30px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+.tfoot .pages button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

@@ -4,10 +4,6 @@ import { api, ApiError } from '../api/client';
 import { useAuth, ROLES } from '../auth/AuthContext';
 import '../styles/table.css';
 
-function extraerLista(data) {
-  return Array.isArray(data) ? data : data.results;
-}
-
 const CAMPOS_VACIOS = {
   clues: '',
   unidad_medica_nombre: '',
@@ -36,14 +32,18 @@ export default function ProgramacionVisitaPage() {
   const [editandoId, setEditandoId] = useState(null);
 
   async function cargarVisitas() {
-    const data = await api.get(`/api/programacion-visitas/?ruta=${id}`);
-    setVisitas(extraerLista(data));
+    // getAll, no get: una ruta con mas de 50 visitas no deberia perder
+    // silenciosamente las que no caben en la primera pagina.
+    setVisitas(await api.getAll(`/api/programacion-visitas/?ruta=${id}`));
   }
 
   useEffect(() => {
     api.get(`/api/rutas/${id}/`).then((r) => {
       setRuta(r);
-      api.get(`/api/unidades-medicas/?entidad=${r.entidad}`).then((data) => setUnidades(extraerLista(data)));
+      // getAll: entidades grandes tienen cientos/miles de unidades medicas --
+      // con paginacion normal, el autocompletado solo hubiera mostrado las
+      // primeras 50 y el resto habria sido invisible para quien captura.
+      api.getAll(`/api/unidades-medicas/?entidad=${r.entidad}`).then(setUnidades);
     });
     cargarVisitas();
     // eslint-disable-next-line react-hooks/exhaustive-deps

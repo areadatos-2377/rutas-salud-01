@@ -5,10 +5,6 @@ import { useAuth, ROLES } from '../auth/AuthContext';
 import { exportarProgramacionExcel } from '../utils/exportarProgramacionExcel';
 import '../styles/table.css';
 
-function extraerLista(data) {
-  return Array.isArray(data) ? data : data.results;
-}
-
 export default function RutasPage() {
   const { usuario } = useAuth();
   const puedeEscribir = usuario?.rol === ROLES.USUARIO_ENTIDAD || usuario?.rol === ROLES.SUPER_ADMIN;
@@ -24,13 +20,12 @@ export default function RutasPage() {
   const [exportando, setExportando] = useState(false);
 
   useEffect(() => {
-    api.get('/api/jornadas/').then((data) => {
-      const lista = extraerLista(data);
+    api.getAll('/api/jornadas/').then((lista) => {
       setJornadas(lista);
       if (lista.length) setJornadaId(String(lista[0].id));
     });
     if (usuario?.rol === ROLES.SUPER_ADMIN) {
-      api.get('/api/entidades/').then((data) => setEntidades(extraerLista(data)));
+      api.getAll('/api/entidades/').then(setEntidades);
     }
   }, [usuario]);
 
@@ -38,8 +33,8 @@ export default function RutasPage() {
     if (!jornadaId) return;
     setRutas(null);
     api
-      .get(`/api/rutas/?jornada=${jornadaId}`)
-      .then((data) => setRutas(extraerLista(data)))
+      .getAll(`/api/rutas/?jornada=${jornadaId}`)
+      .then(setRutas)
       .catch(() => setError('No se pudieron cargar las rutas.'));
   }, [jornadaId]);
 
@@ -52,8 +47,7 @@ export default function RutasPage() {
       if (usuario.rol === ROLES.SUPER_ADMIN) body.entidad = Number(entidadId);
       await api.post('/api/rutas/', body);
       setNumero('');
-      const data = await api.get(`/api/rutas/?jornada=${jornadaId}`);
-      setRutas(extraerLista(data));
+      setRutas(await api.getAll(`/api/rutas/?jornada=${jornadaId}`));
     } catch {
       setError('No se pudo crear la ruta.');
     } finally {
@@ -66,11 +60,14 @@ export default function RutasPage() {
     setError(null);
     try {
       const jornada = jornadas.find((j) => String(j.id) === jornadaId);
-      const [entidad, dataVisitas] = await Promise.all([
+      // getAll aqui es obligatorio, no solo prolijidad: un Excel de
+      // cumplimiento que le faltaran filas por paginacion silenciosa seria
+      // un problema serio, no solo un detalle de UX.
+      const [entidad, visitas] = await Promise.all([
         api.get(`/api/entidades/${usuario.entidad}/`),
-        api.get(`/api/programacion-visitas/?jornada=${jornadaId}`),
+        api.getAll(`/api/programacion-visitas/?jornada=${jornadaId}`),
       ]);
-      await exportarProgramacionExcel({ jornada, entidad, visitas: extraerLista(dataVisitas) });
+      await exportarProgramacionExcel({ jornada, entidad, visitas });
     } catch {
       setError('No se pudo generar el Excel.');
     } finally {

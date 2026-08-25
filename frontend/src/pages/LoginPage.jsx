@@ -5,7 +5,7 @@ import { ApiError } from '../api/client';
 import './LoginPage.css';
 
 export default function LoginPage() {
-  const { iniciarSesion } = useAuth();
+  const { iniciarSesion, sesionExpirada } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [username, setUsername] = useState('');
@@ -38,6 +38,10 @@ export default function LoginPage() {
         <div className="login-mark">R</div>
         <h1>Rutas de la salud</h1>
         <p className="login-sub">Programación y seguimiento de distribución · IMSS-Bienestar</p>
+
+        {sesionExpirada && (
+          <p className="login-error">Tu sesión expiró. Vuelve a iniciar sesión para continuar.</p>
+        )}
 
         <div className="field">
           <label htmlFor="username">Usuario</label>

@@ -2,6 +2,13 @@
 
 > Formato y protocolo completo en `docs/protocolo-bitacora.md`. Entradas más recientes arriba.
 
+## 2026-08-24 — rama `jesus_sam` (12)
+
+**Resumen:** Pulido final de la sesión: paginación y expiración de sesión. `api.getAll()` en el cliente HTTP sigue `next` hasta traer la lista completa — se usa donde faltar datos por paginación silenciosa sería un bug real (autocompletado de CLUES, export a Excel), y `UnidadesMedicasPage` tiene paginación real (Anterior/Siguiente) porque es la única lista que puede crecer a miles (9,460 hoy). **Bug real encontrado con la prueba en navegador**: DRF con `SessionAuthentication` regresa 403 (no 401) para "no autenticado en absoluto" por default (esa clase no define `WWW-Authenticate`) — mi primer intento de manejar expiración de sesión basado en detectar 401 nunca disparaba. Corregido con `usuarios/authentication.py::SessionAuthenticationCon401`, que sí distingue "no autenticado" (401, fuerza logout+redirect) de "autenticado sin permiso de rol" (403, no toca la sesión).
+**Bloqueadores activos:** Ninguno. **Con esto se cierran todos los pendientes que pediste en esta sesión** (catálogo real cargado, export a Excel, coordinadores, paginación, expiración de sesión).
+**Depende de / afecta a:** Si Jorge agrega un nuevo `DEFAULT_AUTHENTICATION_CLASSES` o cambia `usuarios/authentication.py`, que no vuelva a la clase base de DRF sin querer — ahí es donde se rompe la distinción 401/403.
+**Próximo:** A decidir con el usuario — cerrar pendientes de negocio de blueprint-v01 sección 9 antes de evidencia, o seguir puliendo (tests automatizados, CI, etc.).
+
 ## 2026-08-24 — rama `jesus_sam` (11)
 
 **Resumen:** Botón "Descargar Excel" en RutasPage (solo `usuario_entidad`) — exporta toda la programación de su entidad para la jornada seleccionada (todas sus rutas juntas), replicando el formato institucional real de `tools/captura-programacion/` pero con título y rango de fechas **dinámicos** (calculados de `Jornada.fecha_inicio/fecha_fin` en vez de hardcodeados). Backend: agregué filtro `?jornada=` a `/api/programacion-visitas/` y el campo `ruta_numero` de solo lectura (para la columna RUTAS, que combina varias rutas en un solo archivo). `exceljs` instalado como dependencia real de npm (no vendorizado a mano como en la sub-herramienta estática, porque aquí sí hay build step).

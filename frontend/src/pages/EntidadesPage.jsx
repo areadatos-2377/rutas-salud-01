@@ -2,10 +2,6 @@ import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import '../styles/table.css';
 
-function extraerLista(data) {
-  return Array.isArray(data) ? data : data.results;
-}
-
 export default function EntidadesPage() {
   const [entidades, setEntidades] = useState(null);
   const [nombre, setNombre] = useState('');
@@ -14,8 +10,7 @@ export default function EntidadesPage() {
   const [guardando, setGuardando] = useState(false);
 
   async function cargar() {
-    const data = await api.get('/api/entidades/');
-    setEntidades(extraerLista(data));
+    setEntidades(await api.getAll('/api/entidades/'));
   }
 
   useEffect(() => {

@@ -12,6 +12,7 @@ export const ROLES = {
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
   const [cargando, setCargando] = useState(true);
+  const [sesionExpirada, setSesionExpirada] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -27,9 +28,25 @@ export function AuthProvider({ children }) {
     })();
   }, []);
 
+  useEffect(() => {
+    // client.js dispara esto cuando cualquier peticion recibe 401 -- la
+    // sesion ya no es valida del lado del servidor (expiro, o el usuario
+    // cerro sesion desde otra pestana). Se centraliza aqui en vez de que
+    // cada pantalla tenga que detectarlo por su cuenta.
+    function onSesionExpirada() {
+      setUsuario((actual) => {
+        if (actual) setSesionExpirada(true);
+        return null;
+      });
+    }
+    window.addEventListener('sesion-expirada', onSesionExpirada);
+    return () => window.removeEventListener('sesion-expirada', onSesionExpirada);
+  }, []);
+
   const iniciarSesion = useCallback(async (username, password) => {
     const datos = await api.login(username, password);
     setUsuario(datos);
+    setSesionExpirada(false);
     return datos;
   }, []);
 
@@ -41,10 +58,11 @@ export function AuthProvider({ children }) {
       if (!(err instanceof ApiError) || err.status !== 401) throw err;
     }
     setUsuario(null);
+    setSesionExpirada(false);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ usuario, cargando, iniciarSesion, cerrarSesion }}>
+    <AuthContext.Provider value={{ usuario, cargando, sesionExpirada, iniciarSesion, cerrarSesion }}>
       {children}
     </AuthContext.Provider>
   );

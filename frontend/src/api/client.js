@@ -28,7 +28,11 @@ async function peticion(path, { method = 'GET', body } = {}) {
     if (csrftoken) headers['X-CSRFToken'] = csrftoken;
   }
 
-  const resp = await fetch(`${API_BASE_URL}${path}`, {
+  // next/previous de DRF vienen como URL absoluta; el resto de las llamadas
+  // usan ruta relativa.
+  const url = path.startsWith('http') ? path : `${API_BASE_URL}${path}`;
+
+  const resp = await fetch(url, {
     method,
     headers,
     credentials: 'include',
@@ -40,7 +44,17 @@ async function peticion(path, { method = 'GET', body } = {}) {
   const contentType = resp.headers.get('content-type') || '';
   const data = contentType.includes('application/json') ? await resp.json() : await resp.text();
 
-  if (!resp.ok) throw new ApiError(resp.status, data);
+  if (!resp.ok) {
+    // 401 = la sesion ya no es valida del lado del servidor (expiro, o el
+    // usuario se deslogueo en otra pestana) -- se lo hacemos saber a
+    // AuthContext para que limpie el estado y mande a /login, en vez de que
+    // cada pantalla tenga que manejar esto por su cuenta. 403 es distinto
+    // (autenticado pero sin permiso) y no debe cerrar la sesion.
+    if (resp.status === 401 && !path.includes('/api/auth/login/')) {
+      window.dispatchEvent(new CustomEvent('sesion-expirada'));
+    }
+    throw new ApiError(resp.status, data);
+  }
   return data;
 }
 
@@ -54,4 +68,21 @@ export const api = {
   post: (path, body) => peticion(path, { method: 'POST', body }),
   patch: (path, body) => peticion(path, { method: 'PATCH', body }),
   del: (path) => peticion(path, { method: 'DELETE' }),
+
+  // Sigue next/next/next hasta traer TODAS las paginas. Usar solo para listas
+  // que de verdad necesitan estar completas (selects, autocompletado,
+  // catalogos pequenos) -- para listas que pueden crecer mucho (ej. el
+  // catalogo completo de unidades medicas sin filtrar) usa paginacion real
+  // en la pantalla en vez de esto.
+  async getAll(path) {
+    let siguiente = path;
+    let resultados = [];
+    while (siguiente) {
+      const data = await peticion(siguiente);
+      if (Array.isArray(data)) return data; // endpoint sin paginar
+      resultados = resultados.concat(data.results);
+      siguiente = data.next;
+    }
+    return resultados;
+  },
 };

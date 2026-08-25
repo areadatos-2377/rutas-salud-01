@@ -2,10 +2,6 @@ import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import '../styles/table.css';
 
-function extraerLista(data) {
-  return Array.isArray(data) ? data : data.results;
-}
-
 export default function CoordinadoresPage() {
   const [entidades, setEntidades] = useState(null);
   const [editandoId, setEditandoId] = useState(null);
@@ -14,8 +10,7 @@ export default function CoordinadoresPage() {
   const [error, setError] = useState(null);
 
   async function cargar() {
-    const data = await api.get('/api/entidades/');
-    setEntidades(extraerLista(data));
+    setEntidades(await api.getAll('/api/entidades/'));
   }
 
   useEffect(() => {
