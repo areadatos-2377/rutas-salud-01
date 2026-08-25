@@ -33,6 +33,7 @@ export default function ProgramacionVisitaPage() {
   const [autocompletado, setAutocompletado] = useState(false);
   const [error, setError] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  const [editandoId, setEditandoId] = useState(null);
 
   async function cargarVisitas() {
     const data = await api.get(`/api/programacion-visitas/?ruta=${id}`);
@@ -65,25 +66,56 @@ export default function ProgramacionVisitaPage() {
     }
   }
 
-  async function onCrear(e) {
+  function onEditar(v) {
+    setEditandoId(v.id);
+    setAutocompletado(true);
+    setForm({
+      clues: v.unidad_medica,
+      unidad_medica_nombre: v.unidad_medica_nombre,
+      tipo_unidad_medica: v.tipo_unidad_medica || '',
+      fecha_distribucion_programada: v.fecha_distribucion_programada,
+      claves_a_desplazar: v.claves_a_desplazar,
+      piezas_medicamento: v.piezas_medicamento,
+      piezas_material_curacion: v.piezas_material_curacion,
+      quien_recibe: v.quien_recibe || '',
+      telefono: v.telefono || '',
+      correo: v.correo || '',
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function onCancelarEdicion() {
+    setEditandoId(null);
+    setForm(CAMPOS_VACIOS);
+    setAutocompletado(false);
+    setError(null);
+  }
+
+  async function onGuardar(e) {
     e.preventDefault();
     setGuardando(true);
     setError(null);
+    const cuerpo = {
+      ruta: Number(id),
+      unidad_medica: form.clues,
+      fecha_distribucion_programada: form.fecha_distribucion_programada,
+      claves_a_desplazar: Number(form.claves_a_desplazar) || 0,
+      piezas_medicamento: Number(form.piezas_medicamento) || 0,
+      piezas_material_curacion: Number(form.piezas_material_curacion) || 0,
+      tipo_unidad_medica: form.tipo_unidad_medica,
+      quien_recibe: form.quien_recibe,
+      telefono: form.telefono,
+      correo: form.correo,
+    };
     try {
-      await api.post('/api/programacion-visitas/', {
-        ruta: Number(id),
-        unidad_medica: form.clues,
-        fecha_distribucion_programada: form.fecha_distribucion_programada,
-        claves_a_desplazar: Number(form.claves_a_desplazar) || 0,
-        piezas_medicamento: Number(form.piezas_medicamento) || 0,
-        piezas_material_curacion: Number(form.piezas_material_curacion) || 0,
-        tipo_unidad_medica: form.tipo_unidad_medica,
-        quien_recibe: form.quien_recibe,
-        telefono: form.telefono,
-        correo: form.correo,
-      });
+      if (editandoId) {
+        await api.patch(`/api/programacion-visitas/${editandoId}/`, cuerpo);
+      } else {
+        await api.post('/api/programacion-visitas/', cuerpo);
+      }
       setForm(CAMPOS_VACIOS);
       setAutocompletado(false);
+      setEditandoId(null);
       await cargarVisitas();
     } catch (err) {
       if (err instanceof ApiError && err.data) {
@@ -100,6 +132,7 @@ export default function ProgramacionVisitaPage() {
   async function onBorrar(visitaId) {
     if (!confirm('¿Eliminar esta visita programada?')) return;
     await api.del(`/api/programacion-visitas/${visitaId}/`);
+    if (editandoId === visitaId) onCancelarEdicion();
     await cargarVisitas();
   }
 
@@ -115,7 +148,7 @@ export default function ProgramacionVisitaPage() {
       </div>
 
       {puedeEscribir && ruta && (
-        <form className="panel-form" onSubmit={onCrear} style={{ flexWrap: 'wrap' }}>
+        <form className="panel-form" onSubmit={onGuardar} style={{ flexWrap: 'wrap' }}>
           <div className="field" style={{ minWidth: 220 }}>
             <label htmlFor="clues">CLUES</label>
             <input
@@ -124,6 +157,7 @@ export default function ProgramacionVisitaPage() {
               placeholder="Busca por CLUES o nombre…"
               value={autocompletado ? `${form.clues} · ${form.unidad_medica_nombre}` : form.clues}
               onChange={(e) => onCluesChange(e.target.value)}
+              disabled={Boolean(editandoId)}
               required
             />
             <datalist id="datalist-clues">
@@ -194,8 +228,13 @@ export default function ProgramacionVisitaPage() {
             />
           </div>
           <button className="btn-primary" type="submit" disabled={guardando}>
-            {guardando ? 'Guardando…' : '+ Agregar'}
+            {guardando ? 'Guardando…' : editandoId ? 'Guardar cambios' : '+ Agregar'}
           </button>
+          {editandoId && (
+            <button className="btn-ghost" type="button" onClick={onCancelarEdicion}>
+              Cancelar
+            </button>
+          )}
         </form>
       )}
 
@@ -233,11 +272,16 @@ export default function ProgramacionVisitaPage() {
                 <td>{v.piezas_material_curacion}</td>
                 <td>{v.tipo_unidad_medica}</td>
                 <td>{v.quien_recibe}</td>
-                <td style={{ textAlign: 'right' }}>
+                <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                   {puedeEscribir && (
-                    <button className="btn-ghost" onClick={() => onBorrar(v.id)}>
-                      Eliminar
-                    </button>
+                    <>
+                      <button className="btn-ghost" onClick={() => onEditar(v)} style={{ marginRight: 6 }}>
+                        Editar
+                      </button>
+                      <button className="btn-ghost" onClick={() => onBorrar(v.id)}>
+                        Eliminar
+                      </button>
+                    </>
                   )}
                 </td>
               </tr>

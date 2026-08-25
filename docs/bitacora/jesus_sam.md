@@ -2,6 +2,13 @@
 
 > Formato y protocolo completo en `docs/protocolo-bitacora.md`. Entradas más recientes arriba.
 
+## 2026-08-24 — rama `jesus_sam` (8)
+
+**Resumen:** Vistas de catálogos (Entidades, Unidades médicas) para `super_admin`, y edición de ProgramacionVisita existente (botón "Editar" → formulario precargado → PATCH; CLUES queda bloqueado al editar). Encontré y corregí un gap real de seguridad/UX con la prueba en navegador: las rutas `/catalogos/*` solo ocultaban el link del nav para `usuario_entidad`, pero no protegían la ruta — por el redirect "volver a donde estabas" tras un logout/login terminé aterrizando ahí con el usuario equivocado y sí podía **ver** la página (el backend ya bloqueaba escribir, pero ver tampoco debería). Agregué `RequireRole` en `App.jsx`.
+**Bloqueadores activos:** Ninguno. **Con esto el módulo de programación (backend + frontend) queda funcionalmente completo.**
+**Depende de / afecta a:** Si Jorge agrega una vista nueva restringida a un rol específico, que use `RequireRole` (ya en `App.jsx`) en vez de solo esconder el link del nav — ese patrón de "solo esconder, no proteger la ruta" es fácil de repetir por accidente.
+**Próximo:** A elegir entre nosotros: pulir lo ya construido (paginación, manejo de expiración de sesión) o cerrar los pendientes de blueprint-v01 sección 9 para poder diseñar el módulo de evidencia.
+
 ## 2026-08-24 — rama `jesus_sam` (7)
 
 **Resumen:** Vistas de Rutas y ProgramacionVisita en el frontend — la captura real (CLUES con autocompletado desde catálogo, igual que tools/captura-programacion/, pero contra el backend real). Encontré y corregí un bug real durante la prueba en navegador: `RutaSerializer.entidad` era requerido por DRF, pero el frontend de `usuario_entidad` nunca lo manda (se esperaba que `perform_create` lo inyectara) — la validación fallaba antes de llegar ahí. El smoke test de backend (paso 3) no lo detectó porque siempre incluía `entidad` en el payload de prueba, aunque fuera el incorrecto. Corregido con `required=False` + validación explícita para admin/super_admin. Agregué también `?jornada=` y `?ruta=` como filtros y campos `*_nombre` de solo lectura en los serializers para que el frontend no tenga que hacer joins manuales.
