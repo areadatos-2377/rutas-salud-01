@@ -2,6 +2,13 @@
 
 > Formato y protocolo completo en `docs/protocolo-bitacora.md`. Entradas más recientes arriba.
 
+## 2026-08-24 — rama `jesus_sam` (10)
+
+**Resumen:** Catálogo de coordinadores estatales. Backend: acción `PATCH /api/entidades/<id>/coordinador/` con permiso nuevo `PuedeEditarCoordinador` (admin_nacional o super_admin) — separado del resto del catálogo de Entidad (crear/borrar sigue siendo exclusivo de super_admin vía `SoloLecturaOSuperAdmin`). Frontend: `CoordinadoresPage` (editar en línea) + link de nav visible para admin_nacional y super_admin, protegido con `RequireRole`.
+**Bloqueadores activos:** Ninguno.
+**Depende de / afecta a:** Nada nuevo, sigue el mismo patrón de permisos ya establecido.
+**Próximo:** Exportar a `.xlsx` desde la vista de Programación (mismo formato que `tools/captura-programacion/`), luego pulido (paginación, expiración de sesión).
+
 ## 2026-08-24 — rama `jesus_sam` (9)
 
 **Resumen:** Comando `manage.py cargar_clues` (con `--dry-run`) — carga/actualiza Entidad y UnidadMedica en la base de datos real desde `data/raw/CLUES_IMB.xlsx` (antes ese Excel solo alimentaba el JSON de la sub-herramienta estática, nunca la base de datos del backend). Reutiliza la misma lógica de mapeo que `scripts/generar_catalogo_clues.py`. Idempotente por diseño: usa `update_or_create` por CLUES, nunca toca ni borra unidades con `origen=manual`, no borra CLUES ausentes del nuevo Excel. Probado de verdad: dry-run no escribe nada (verificado contando filas antes/después), la carga real trajo 9,460 unidades y 23 entidades, y correrlo una segunda vez da 0 creadas / todo sin cambios (confirma que es seguro para la actualización mensual que pidió el usuario).

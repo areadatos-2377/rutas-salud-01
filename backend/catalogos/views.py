@@ -1,6 +1,8 @@
 from rest_framework import permissions, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
-from usuarios.permissions import SoloLecturaOSuperAdmin
+from usuarios.permissions import PuedeEditarCoordinador, SoloLecturaOSuperAdmin
 
 from .models import Entidad, UnidadMedica
 from .serializers import EntidadSerializer, UnidadMedicaSerializer
@@ -10,6 +12,21 @@ class EntidadViewSet(viewsets.ModelViewSet):
     queryset = Entidad.objects.all()
     serializer_class = EntidadSerializer
     permission_classes = [permissions.IsAuthenticated, SoloLecturaOSuperAdmin]
+
+    @action(
+        detail=True,
+        methods=["patch"],
+        url_path="coordinador",
+        permission_classes=[permissions.IsAuthenticated, PuedeEditarCoordinador],
+    )
+    def actualizar_coordinador(self, request, pk=None):
+        """Catálogo de coordinadores estatales: cambian cada cierto tiempo, y a
+        diferencia del resto del catálogo de entidades (exclusivo de
+        super_admin), admin_nacional también puede actualizar este campo."""
+        entidad = self.get_object()
+        entidad.coordinador = request.data.get("coordinador", "").strip()
+        entidad.save(update_fields=["coordinador"])
+        return Response(EntidadSerializer(entidad).data)
 
 
 class UnidadMedicaViewSet(viewsets.ModelViewSet):

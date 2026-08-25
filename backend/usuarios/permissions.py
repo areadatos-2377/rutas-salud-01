@@ -35,6 +35,22 @@ class PuedeGestionarJornadas(BasePermission):
         return usuario.rol in (Usuario.ROL_ADMIN_NACIONAL, Usuario.ROL_SUPER_ADMIN)
 
 
+class PuedeEditarCoordinador(BasePermission):
+    """Actualizar el coordinador estatal de una entidad: admin_nacional o
+    super_admin. Los coordinadores cambian cada cierto tiempo y admin_nacional
+    necesita poder actualizarlos sin volverse dueño de todo el catálogo de
+    entidades (crear/borrar entidades sigue siendo exclusivo de super_admin,
+    vía SoloLecturaOSuperAdmin)."""
+
+    def has_permission(self, request, view):
+        usuario = request.user
+        return bool(
+            usuario
+            and usuario.is_authenticated
+            and usuario.rol in (Usuario.ROL_ADMIN_NACIONAL, Usuario.ROL_SUPER_ADMIN)
+        )
+
+
 class PuedeGestionarProgramacion(BasePermission):
     """usuario_entidad y super_admin leen/escriben; admin_nacional solo lee
     (blueprint-v01.md secciones 2.5 y 3: "el administrador nacional solo puede

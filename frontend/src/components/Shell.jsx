@@ -63,15 +63,22 @@ export default function Shell() {
           <NavLink to="/rutas" className="nav-item">
             {ICONOS.rutas} Rutas
           </NavLink>
-          {usuario?.rol === ROLES.SUPER_ADMIN && (
+          {(usuario?.rol === ROLES.ADMIN_NACIONAL || usuario?.rol === ROLES.SUPER_ADMIN) && (
             <>
               <div className="nav-section">Administración</div>
-              <NavLink to="/catalogos/entidades" className="nav-item">
-                {ICONOS.catalogos} Entidades
+              <NavLink to="/catalogos/coordinadores" className="nav-item">
+                {ICONOS.catalogos} Coordinadores
               </NavLink>
-              <NavLink to="/catalogos/unidades" className="nav-item">
-                {ICONOS.catalogos} Unidades médicas
-              </NavLink>
+              {usuario.rol === ROLES.SUPER_ADMIN && (
+                <>
+                  <NavLink to="/catalogos/entidades" className="nav-item">
+                    {ICONOS.catalogos} Entidades
+                  </NavLink>
+                  <NavLink to="/catalogos/unidades" className="nav-item">
+                    {ICONOS.catalogos} Unidades médicas
+                  </NavLink>
+                </>
+              )}
             </>
           )}
         </nav>
