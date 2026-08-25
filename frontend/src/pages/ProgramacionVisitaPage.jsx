@@ -1,0 +1,250 @@
+import { useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { api, ApiError } from '../api/client';
+import { useAuth, ROLES } from '../auth/AuthContext';
+import '../styles/table.css';
+
+function extraerLista(data) {
+  return Array.isArray(data) ? data : data.results;
+}
+
+const CAMPOS_VACIOS = {
+  clues: '',
+  unidad_medica_nombre: '',
+  tipo_unidad_medica: '',
+  fecha_distribucion_programada: '',
+  claves_a_desplazar: '',
+  piezas_medicamento: '',
+  piezas_material_curacion: '',
+  quien_recibe: '',
+  telefono: '',
+  correo: '',
+};
+
+export default function ProgramacionVisitaPage() {
+  const { id } = useParams();
+  const { usuario } = useAuth();
+  const puedeEscribir = usuario?.rol === ROLES.USUARIO_ENTIDAD || usuario?.rol === ROLES.SUPER_ADMIN;
+
+  const [ruta, setRuta] = useState(null);
+  const [unidades, setUnidades] = useState([]);
+  const [visitas, setVisitas] = useState(null);
+  const [form, setForm] = useState(CAMPOS_VACIOS);
+  const [autocompletado, setAutocompletado] = useState(false);
+  const [error, setError] = useState(null);
+  const [guardando, setGuardando] = useState(false);
+
+  async function cargarVisitas() {
+    const data = await api.get(`/api/programacion-visitas/?ruta=${id}`);
+    setVisitas(extraerLista(data));
+  }
+
+  useEffect(() => {
+    api.get(`/api/rutas/${id}/`).then((r) => {
+      setRuta(r);
+      api.get(`/api/unidades-medicas/?entidad=${r.entidad}`).then((data) => setUnidades(extraerLista(data)));
+    });
+    cargarVisitas();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  function onCluesChange(valorInput) {
+    const clues = valorInput.includes(' · ') ? valorInput.split(' · ')[0].trim() : valorInput.trim();
+    const unidad = unidades.find((u) => u.clues === clues);
+    if (unidad) {
+      setForm((f) => ({
+        ...f,
+        clues,
+        unidad_medica_nombre: unidad.nombre,
+        tipo_unidad_medica: unidad.tipo_unidad_medica || '',
+      }));
+      setAutocompletado(true);
+    } else {
+      setForm((f) => ({ ...f, clues }));
+      setAutocompletado(false);
+    }
+  }
+
+  async function onCrear(e) {
+    e.preventDefault();
+    setGuardando(true);
+    setError(null);
+    try {
+      await api.post('/api/programacion-visitas/', {
+        ruta: Number(id),
+        unidad_medica: form.clues,
+        fecha_distribucion_programada: form.fecha_distribucion_programada,
+        claves_a_desplazar: Number(form.claves_a_desplazar) || 0,
+        piezas_medicamento: Number(form.piezas_medicamento) || 0,
+        piezas_material_curacion: Number(form.piezas_material_curacion) || 0,
+        tipo_unidad_medica: form.tipo_unidad_medica,
+        quien_recibe: form.quien_recibe,
+        telefono: form.telefono,
+        correo: form.correo,
+      });
+      setForm(CAMPOS_VACIOS);
+      setAutocompletado(false);
+      await cargarVisitas();
+    } catch (err) {
+      if (err instanceof ApiError && err.data) {
+        const mensaje = err.data.non_field_errors?.[0] || err.data.detail || JSON.stringify(err.data);
+        setError(mensaje);
+      } else {
+        setError('No se pudo guardar la visita.');
+      }
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  async function onBorrar(visitaId) {
+    if (!confirm('¿Eliminar esta visita programada?')) return;
+    await api.del(`/api/programacion-visitas/${visitaId}/`);
+    await cargarVisitas();
+  }
+
+  return (
+    <div>
+      <div className="topbar">
+        <div>
+          <p className="crumb">
+            <Link to="/rutas">Rutas</Link> · {ruta?.jornada_nombre}
+          </p>
+          <h2>{ruta ? `${ruta.entidad_nombre} — Ruta ${ruta.numero_o_nombre}` : 'Cargando…'}</h2>
+        </div>
+      </div>
+
+      {puedeEscribir && ruta && (
+        <form className="panel-form" onSubmit={onCrear} style={{ flexWrap: 'wrap' }}>
+          <div className="field" style={{ minWidth: 220 }}>
+            <label htmlFor="clues">CLUES</label>
+            <input
+              id="clues"
+              list="datalist-clues"
+              placeholder="Busca por CLUES o nombre…"
+              value={autocompletado ? `${form.clues} · ${form.unidad_medica_nombre}` : form.clues}
+              onChange={(e) => onCluesChange(e.target.value)}
+              required
+            />
+            <datalist id="datalist-clues">
+              {unidades.map((u) => (
+                <option key={u.clues} value={`${u.clues} · ${u.nombre}`} />
+              ))}
+            </datalist>
+          </div>
+          <div className="field">
+            <label htmlFor="fecha">Fecha programada</label>
+            <input
+              id="fecha"
+              type="date"
+              value={form.fecha_distribucion_programada}
+              onChange={(e) => setForm({ ...form, fecha_distribucion_programada: e.target.value })}
+              required
+            />
+          </div>
+          <div className="field" style={{ maxWidth: 130 }}>
+            <label htmlFor="claves">Claves a desplazar</label>
+            <input
+              id="claves"
+              type="number"
+              min="0"
+              value={form.claves_a_desplazar}
+              onChange={(e) => setForm({ ...form, claves_a_desplazar: e.target.value })}
+            />
+          </div>
+          <div className="field" style={{ maxWidth: 150 }}>
+            <label htmlFor="med">Piezas medicamento</label>
+            <input
+              id="med"
+              type="number"
+              min="0"
+              value={form.piezas_medicamento}
+              onChange={(e) => setForm({ ...form, piezas_medicamento: e.target.value })}
+            />
+          </div>
+          <div className="field" style={{ maxWidth: 150 }}>
+            <label htmlFor="mat">Piezas material curación</label>
+            <input
+              id="mat"
+              type="number"
+              min="0"
+              value={form.piezas_material_curacion}
+              onChange={(e) => setForm({ ...form, piezas_material_curacion: e.target.value })}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="recibe">¿Quién recibe?</label>
+            <input
+              id="recibe"
+              value={form.quien_recibe}
+              onChange={(e) => setForm({ ...form, quien_recibe: e.target.value })}
+            />
+          </div>
+          <div className="field" style={{ maxWidth: 140 }}>
+            <label htmlFor="tel">Teléfono</label>
+            <input id="tel" value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} />
+          </div>
+          <div className="field">
+            <label htmlFor="correo">Correo</label>
+            <input
+              id="correo"
+              type="email"
+              value={form.correo}
+              onChange={(e) => setForm({ ...form, correo: e.target.value })}
+            />
+          </div>
+          <button className="btn-primary" type="submit" disabled={guardando}>
+            {guardando ? 'Guardando…' : '+ Agregar'}
+          </button>
+        </form>
+      )}
+
+      {error && <p className="login-error" style={{ maxWidth: 500 }}>{error}</p>}
+
+      <div className="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th>CLUES</th>
+              <th>Unidad</th>
+              <th>Fecha</th>
+              <th>Claves</th>
+              <th>Medicamento</th>
+              <th>Mat. curación</th>
+              <th>Tipo unidad</th>
+              <th>Quién recibe</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {visitas === null && (
+              <tr><td colSpan={9} className="tabla-vacia">Cargando…</td></tr>
+            )}
+            {visitas?.length === 0 && (
+              <tr><td colSpan={9} className="tabla-vacia">Todavía no hay visitas programadas en esta ruta.</td></tr>
+            )}
+            {visitas?.map((v) => (
+              <tr key={v.id}>
+                <td>{v.unidad_medica}</td>
+                <td className="nombre">{v.unidad_medica_nombre}</td>
+                <td>{v.fecha_distribucion_programada}</td>
+                <td>{v.claves_a_desplazar}</td>
+                <td>{v.piezas_medicamento}</td>
+                <td>{v.piezas_material_curacion}</td>
+                <td>{v.tipo_unidad_medica}</td>
+                <td>{v.quien_recibe}</td>
+                <td style={{ textAlign: 'right' }}>
+                  {puedeEscribir && (
+                    <button className="btn-ghost" onClick={() => onBorrar(v.id)}>
+                      Eliminar
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
+from catalogos.models import Entidad
 from usuarios.models import Usuario
 
 from .models import Jornada, ProgramacionVisita, Ruta
@@ -13,18 +14,28 @@ class JornadaSerializer(serializers.ModelSerializer):
 
 
 class RutaSerializer(serializers.ModelSerializer):
+    jornada_nombre = serializers.CharField(source="jornada.nombre", read_only=True)
+    entidad_nombre = serializers.CharField(source="entidad.nombre", read_only=True)
+    # No requerido aqui: para usuario_entidad el viewset lo fuerza server-side en
+    # perform_create y el frontend ni lo manda. Solo super_admin debe mandarlo
+    # explicitamente (el viewset valida eso).
+    entidad = serializers.PrimaryKeyRelatedField(queryset=Entidad.objects.all(), required=False)
+
     class Meta:
         model = Ruta
-        fields = ["id", "jornada", "entidad", "numero_o_nombre"]
+        fields = ["id", "jornada", "jornada_nombre", "entidad", "entidad_nombre", "numero_o_nombre"]
 
 
 class ProgramacionVisitaSerializer(serializers.ModelSerializer):
+    unidad_medica_nombre = serializers.CharField(source="unidad_medica.nombre", read_only=True)
+
     class Meta:
         model = ProgramacionVisita
         fields = [
             "id",
             "ruta",
             "unidad_medica",
+            "unidad_medica_nombre",
             "fecha_distribucion_programada",
             "claves_a_desplazar",
             "piezas_medicamento",

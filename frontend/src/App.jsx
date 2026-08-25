@@ -3,6 +3,8 @@ import { AuthProvider, useAuth } from './auth/AuthContext';
 import Shell from './components/Shell';
 import LoginPage from './pages/LoginPage';
 import JornadasPage from './pages/JornadasPage';
+import RutasPage from './pages/RutasPage';
+import ProgramacionVisitaPage from './pages/ProgramacionVisitaPage';
 import Proximamente from './pages/Proximamente';
 
 function RequireAuth({ children }) {
@@ -29,7 +31,8 @@ export default function App() {
         >
           <Route index element={<Navigate to="/jornadas" replace />} />
           <Route path="jornadas" element={<JornadasPage />} />
-          <Route path="rutas" element={<Proximamente titulo="Rutas" />} />
+          <Route path="rutas" element={<RutasPage />} />
+          <Route path="rutas/:id" element={<ProgramacionVisitaPage />} />
           <Route path="catalogos/entidades" element={<Proximamente titulo="Entidades" />} />
           <Route path="catalogos/unidades" element={<Proximamente titulo="Unidades médicas" />} />
         </Route>

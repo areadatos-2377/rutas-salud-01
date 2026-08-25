@@ -1,4 +1,4 @@
-from rest_framework import permissions, viewsets
+from rest_framework import permissions, serializers, viewsets
 
 from usuarios.models import Usuario
 from usuarios.permissions import PuedeGestionarJornadas, PuedeGestionarProgramacion
@@ -23,7 +23,10 @@ class RutaViewSet(viewsets.ModelViewSet):
         qs = super().get_queryset()
         usuario = self.request.user
         if usuario.rol == Usuario.ROL_USUARIO_ENTIDAD:
-            return qs.filter(entidad=usuario.entidad)
+            qs = qs.filter(entidad=usuario.entidad)
+        jornada_id = self.request.query_params.get("jornada")
+        if jornada_id:
+            qs = qs.filter(jornada_id=jornada_id)
         return qs
 
     def perform_create(self, serializer):
@@ -32,6 +35,8 @@ class RutaViewSet(viewsets.ModelViewSet):
             # Nunca confiar en el entidad que mande el cliente: se fuerza la propia.
             serializer.save(entidad=usuario.entidad)
         else:
+            if "entidad" not in serializer.validated_data:
+                raise serializers.ValidationError({"entidad": "Este campo es requerido."})
             serializer.save()
 
 
@@ -46,5 +51,8 @@ class ProgramacionVisitaViewSet(viewsets.ModelViewSet):
         qs = super().get_queryset()
         usuario = self.request.user
         if usuario.rol == Usuario.ROL_USUARIO_ENTIDAD:
-            return qs.filter(ruta__entidad=usuario.entidad)
+            qs = qs.filter(ruta__entidad=usuario.entidad)
+        ruta_id = self.request.query_params.get("ruta")
+        if ruta_id:
+            qs = qs.filter(ruta_id=ruta_id)
         return qs

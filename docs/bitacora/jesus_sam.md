@@ -2,6 +2,13 @@
 
 > Formato y protocolo completo en `docs/protocolo-bitacora.md`. Entradas más recientes arriba.
 
+## 2026-08-24 — rama `jesus_sam` (7)
+
+**Resumen:** Vistas de Rutas y ProgramacionVisita en el frontend — la captura real (CLUES con autocompletado desde catálogo, igual que tools/captura-programacion/, pero contra el backend real). Encontré y corregí un bug real durante la prueba en navegador: `RutaSerializer.entidad` era requerido por DRF, pero el frontend de `usuario_entidad` nunca lo manda (se esperaba que `perform_create` lo inyectara) — la validación fallaba antes de llegar ahí. El smoke test de backend (paso 3) no lo detectó porque siempre incluía `entidad` en el payload de prueba, aunque fuera el incorrecto. Corregido con `required=False` + validación explícita para admin/super_admin. Agregué también `?jornada=` y `?ruta=` como filtros y campos `*_nombre` de solo lectura en los serializers para que el frontend no tenga que hacer joins manuales.
+**Bloqueadores activos:** Ninguno.
+**Depende de / afecta a:** Si Jorge toca `programacion/serializers.py` o `views.py`, ojo con el patrón "campo requerido en el modelo pero inyectado server-side" — cualquier campo así necesita `required=False` en el serializer + validación explícita en el branch donde no se inyecta, si no se repite este mismo bug.
+**Próximo:** Vistas de catálogos (Entidades, Unidades médicas) para super_admin; edición inline de ProgramacionVisita (hoy solo crear/eliminar).
+
 ## 2026-08-24 — rama `jesus_sam` (6)
 
 **Resumen:** Arrancado el frontend (`frontend/`, React 19 + Vite). Sistema de diseño calcado de `legacy/propuesta-01-modulo-ce.html` (paleta guinda/verde/dorado, Fraunces+Manrope+JetBrains Mono). Autenticación real contra el backend (sesión por cookie + CSRF), Shell con nav condicionado por rol, página de Jornadas (lista + creación, solo admin_nacional/super_admin crean). Probado con Playwright en Chromium real, no solo revisión de código: redirect sin sesión, credenciales inválidas, login correcto, UI oculta según rol, logout, sesión persiste tras recargar.
