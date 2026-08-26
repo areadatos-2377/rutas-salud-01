@@ -155,6 +155,25 @@ class Command(BaseCommand):
         headers = [c.value for c in next(ws.iter_rows(min_row=1, max_row=1))]
         idx = {h: i for i, h in enumerate(headers)}
 
+        # Una sola consulta para traer TODAS las unidades existentes (en vez
+        # de una consulta por fila) -- con ~10,500 filas del Excel, hacer
+        # update_or_create() fila por fila significa decenas de miles de
+        # idas y vueltas a la base de datos, y contra Postgres remoto sobre
+        # un tunel SSH eso es tan lento que la conexion se cae antes de
+        # terminar. bulk_create/bulk_update mandan cientos de filas por cada
+        # ida y vuelta.
+        existentes = {u.clues: u for u in UnidadMedica.objects.all()}
+
+        campos_comparables = [
+            "nombre", "tipo_unidad_medica", "municipio", "origen", "nivel_atencion",
+        ]
+        # dict, no lista: si el mismo CLUES aparece dos veces en el Excel (pasa),
+        # bulk_create tronaria con un IntegrityError de PK duplicada al insertar
+        # dos objetos nuevos con el mismo clues -- la segunda ocurrencia debe
+        # reemplazar a la primera en vez de sumarse.
+        nuevos_por_clues = {}
+        por_actualizar = []
+
         def procesar_fila(row):
             nonlocal creadas, actualizadas, sin_cambios, omitidas_entidad_no_reconocida
             nivel_atencion = row[idx["NIVEL ATENCION"]]
@@ -184,31 +203,49 @@ class Command(BaseCommand):
                 "nivel_atencion": nivel_atencion,
             }
 
-            anterior = UnidadMedica.objects.filter(pk=clues).first()
-            _, creada = UnidadMedica.objects.update_or_create(clues=clues, defaults=defaults)
-            if creada:
-                creadas += 1
-            elif anterior and all(getattr(anterior, k) == v for k, v in defaults.items() if k != "entidad"):
+            anterior = existentes.get(clues)
+            if anterior is None:
+                if clues not in nuevos_por_clues:
+                    creadas += 1
+                nuevos_por_clues[clues] = UnidadMedica(clues=clues, **defaults)
+                return
+
+            cambio = anterior.entidad_id != entidad_obj.id or any(
+                getattr(anterior, k) != v for k, v in defaults.items() if k != "entidad"
+            )
+            if not cambio:
                 sin_cambios += 1
-            else:
-                actualizadas += 1
+                return
+            for k, v in defaults.items():
+                setattr(anterior, k, v)
+            por_actualizar.append(anterior)
+            actualizadas += 1
 
         filas = list(ws.iter_rows(min_row=2, values_only=True))
         total_leidas = len(filas)
 
-        if batch_size > 0:
-            for inicio in range(0, len(filas), batch_size):
-                lote = filas[inicio : inicio + batch_size]
+        for row in filas:
+            procesar_fila(row)
+
+        tamano_lote = batch_size if batch_size > 0 else 500
+
+        def guardar_en_lotes(objetos, accion):
+            for inicio in range(0, len(objetos), tamano_lote):
+                lote = objetos[inicio : inicio + tamano_lote]
                 with transaction.atomic():
-                    for row in lote:
-                        procesar_fila(row)
+                    if accion == "crear":
+                        UnidadMedica.objects.bulk_create(lote)
+                    else:
+                        UnidadMedica.objects.bulk_update(lote, campos_comparables + ["entidad"])
                 self.stdout.write(
-                    f"  ...{min(inicio + batch_size, len(filas))}/{len(filas)} filas procesadas "
-                    f"({creadas} creadas, {actualizadas} actualizadas)"
+                    f"  ...{accion}: {min(inicio + tamano_lote, len(objetos))}/{len(objetos)}"
                 )
-        else:
-            for row in filas:
-                procesar_fila(row)
+
+        por_crear = list(nuevos_por_clues.values())
+        if por_crear:
+            guardar_en_lotes(por_crear, "crear")
+        if por_actualizar:
+            guardar_en_lotes(por_actualizar, "actualizar")
 
         self.stdout.write(
             f"Unidades medicas: {creadas} creadas, {actualizadas} actualizadas, "
