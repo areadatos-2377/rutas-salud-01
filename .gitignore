@@ -26,8 +26,15 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Memoria de trabajo personal con IA (protocolo_multiagentes.md) — no se comparte con el equipo
+# Memoria de trabajo personal con IA — no se comparte con el equipo
 .context/
+
+# Protocolo de bitacora/multi-agente: ya no se usa en este proyecto
+AGENTS.md
+CLAUDE.md
+/legacy/
+docs/protocolo-bitacora.md
+docs/bitacora/
 
 # Editors / OS
 .vscode/
