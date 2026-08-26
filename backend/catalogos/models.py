@@ -38,7 +38,11 @@ class UnidadMedica(models.Model):
     clues = models.CharField(max_length=20, primary_key=True)
     nombre = models.CharField(max_length=200)
     entidad = models.ForeignKey(Entidad, on_delete=models.PROTECT, related_name="unidades_medicas")
-    tipo_unidad_medica = models.CharField(max_length=50, blank=True)
+    # 100, no 50: algunas tipologias del catalogo oficial no matchean ningun
+    # patron de mapear_tipo_unidad_medica() y caen al nombre crudo del Excel
+    # (ej. "CENTROS AVANZADOS DE ATENCION PRIMARIA A LA SALUD (CAAPS)", 57
+    # caracteres) -- SQLite lo dejaba pasar silenciosamente, Postgres no.
+    tipo_unidad_medica = models.CharField(max_length=100, blank=True)
     municipio = models.CharField(max_length=100, blank=True)
     origen = models.CharField(max_length=20, choices=ORIGEN_CHOICES, default=ORIGEN_MANUAL)
     # Viene tal cual de la columna "NIVEL ATENCION" de CLUES_IMB.xlsx. El

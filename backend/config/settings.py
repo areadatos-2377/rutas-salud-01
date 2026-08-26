@@ -137,3 +137,18 @@ CORS_ALLOWED_ORIGINS = [
 # para aceptar el POST protegido por CSRF.
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
+
+# En Railway, frontend y backend viven en subdominios *.up.railway.app
+# distintos -- cada uno es un "sitio" distinto para el navegador (no solo un
+# origen distinto, como localhost:5183 -> localhost:8010 en desarrollo). Con
+# SameSite=Lax (default de Django) el navegador manda la cookie de sesion en
+# el login pero la bloquea en los fetch() cross-site siguientes, y la app
+# parece desloguearse sola segundos despues de entrar. SameSite=None arregla
+# eso, pero exige Secure=True (que en desarrollo, sobre http://localhost,
+# haria que el navegador nunca mandara la cookie) -- por eso solo aplica
+# cuando DEBUG=False.
+if not DEBUG:
+    SESSION_COOKIE_SAMESITE = "None"
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SAMESITE = "None"
+    CSRF_COOKIE_SECURE = True

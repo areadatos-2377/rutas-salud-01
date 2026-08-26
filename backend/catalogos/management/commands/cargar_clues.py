@@ -94,6 +94,20 @@ class Command(BaseCommand):
             action="store_true",
             help="Muestra que haria sin escribir en la base de datos.",
         )
+        parser.add_argument(
+            "--batch-size",
+            type=int,
+            default=0,
+            help=(
+                "Si es > 0, confirma cada N unidades en vez de todo en una sola "
+                "transaccion (util sobre conexiones lentas/tuneladas, ej. cargar "
+                "produccion desde fuera de la red de Railway). Cada upsert ya es "
+                "idempotente, asi que perder atomicidad global es seguro: si se "
+                "corta a la mitad, volver a correr el comando retoma donde quedo. "
+                "Ignorado en --dry-run (ese siempre corre en una sola transaccion "
+                "para poder revertirla completa)."
+            ),
+        )
 
     def handle(self, *args, **options):
         if not CLUES_XLSX.exists():
@@ -102,16 +116,19 @@ class Command(BaseCommand):
             raise CommandError(f"No se encontro {ENTIDADES_XLSX}")
 
         dry_run = options["dry_run"]
+        batch_size = options["batch_size"] if not dry_run else 0
 
-        try:
-            with transaction.atomic():
-                self._cargar(dry_run)
-                if dry_run:
+        if dry_run:
+            try:
+                with transaction.atomic():
+                    self._cargar(dry_run, batch_size)
                     raise DryRunRollback()
-        except DryRunRollback:
-            self.stdout.write(self.style.WARNING("\n--dry-run: no se escribio nada en la base de datos."))
+            except DryRunRollback:
+                self.stdout.write(self.style.WARNING("\n--dry-run: no se escribio nada en la base de datos."))
+        else:
+            self._cargar(dry_run, batch_size)
 
-    def _cargar(self, dry_run):
+    def _cargar(self, dry_run, batch_size):
         coordinadores, orden_entidades = self._leer_coordinadores()
 
         mapa_entidad = {}
@@ -132,31 +149,30 @@ class Command(BaseCommand):
 
         creadas = actualizadas = sin_cambios = 0
         omitidas_entidad_no_reconocida = 0
-        total_leidas = 0
 
         wb = openpyxl.load_workbook(CLUES_XLSX, data_only=True)
         ws = wb["BD_IMB"]
         headers = [c.value for c in next(ws.iter_rows(min_row=1, max_row=1))]
         idx = {h: i for i, h in enumerate(headers)}
 
-        for row in ws.iter_rows(min_row=2, values_only=True):
-            total_leidas += 1
+        def procesar_fila(row):
+            nonlocal creadas, actualizadas, sin_cambios, omitidas_entidad_no_reconocida
             nivel_atencion = row[idx["NIVEL ATENCION"]]
             if nivel_atencion not in NIVELES_ATENCION_ESPERADOS:
-                continue
+                return
             if row[idx["ESTATUS DE OPERACION"]] != ESTATUS_ESPERADO:
-                continue
+                return
 
             entidad_norm = normalizar(row[idx["ENTIDAD"]])
             entidad_norm = normalizar(ALIAS_ENTIDAD.get(entidad_norm, entidad_norm))
             entidad_obj = mapa_entidad.get(entidad_norm)
             if entidad_obj is None:
                 omitidas_entidad_no_reconocida += 1
-                continue
+                return
 
             clues = (row[idx["CLUES"]] or "").strip()
             if not clues:
-                continue
+                return
 
             tipologia = row[idx["NOMBRE DE TIPOLOGIA"]]
             defaults = {
@@ -176,6 +192,23 @@ class Command(BaseCommand):
                 sin_cambios += 1
             else:
                 actualizadas += 1
+
+        filas = list(ws.iter_rows(min_row=2, values_only=True))
+        total_leidas = len(filas)
+
+        if batch_size > 0:
+            for inicio in range(0, len(filas), batch_size):
+                lote = filas[inicio : inicio + batch_size]
+                with transaction.atomic():
+                    for row in lote:
+                        procesar_fila(row)
+                self.stdout.write(
+                    f"  ...{min(inicio + batch_size, len(filas))}/{len(filas)} filas procesadas "
+                    f"({creadas} creadas, {actualizadas} actualizadas)"
+                )
+        else:
+            for row in filas:
+                procesar_fila(row)
 
         self.stdout.write(
             f"Unidades medicas: {creadas} creadas, {actualizadas} actualizadas, "
