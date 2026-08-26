@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate, login, logout
+from django.middleware.csrf import get_token
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -12,24 +13,32 @@ from .serializers import UsuarioMeSerializer
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def csrf(request):
-    """GET -> no hace nada mas que asegurar que el navegador tenga la cookie
-    csrftoken. El frontend la llama una vez al arrancar, antes de cualquier
-    POST (incluido login), porque Django no manda esa cookie por si solo en
-    un backend sin templates."""
-    return Response({"detail": "ok"})
+    """GET -> ademas de asegurar la cookie csrftoken, devuelve el valor en el
+    body: en produccion frontend y backend viven en dominios *.up.railway.app
+    distintos, y document.cookie en el frontend nunca puede leer una cookie
+    que puso un dominio distinto (a diferencia de localhost:5183 -> :8010 en
+    desarrollo, mismo hostname). El body si es legible cross-origin porque
+    CORS ya lo permite explicitamente."""
+    return Response({"detail": "ok", "csrftoken": get_token(request)})
 
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def iniciar_sesion(request):
-    """POST {username, password} -> inicia sesión (cookie) y devuelve el usuario."""
+    """POST {username, password} -> inicia sesión (cookie) y devuelve el usuario.
+    Django rota el token CSRF al hacer login() (rotate_token, previene
+    fijacion de sesion) -- el valor que el frontend haya guardado de /csrf/
+    antes de este POST queda obsoleto, por eso se devuelve el nuevo aqui
+    tambien en vez de obligar a otra ronda a /csrf/."""
     usuario = authenticate(
         request, username=request.data.get("username"), password=request.data.get("password")
     )
     if usuario is None:
         return Response({"detail": "Credenciales inválidas."}, status=status.HTTP_401_UNAUTHORIZED)
     login(request, usuario)
-    return Response(UsuarioMeSerializer(usuario).data)
+    datos = UsuarioMeSerializer(usuario).data
+    datos["csrftoken"] = get_token(request)
+    return Response(datos)
 
 
 @api_view(["POST"])

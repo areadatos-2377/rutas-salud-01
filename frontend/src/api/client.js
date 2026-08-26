@@ -1,14 +1,19 @@
 // Cliente HTTP minimo hacia el backend Django/DRF.
-// SessionAuthentication vive en una cookie httpOnly=false + CSRF token en
-// otra cookie legible por JS -- por eso credentials:'include' en todo, y el
-// header X-CSRFToken en cualquier metodo que no sea GET/HEAD/OPTIONS.
+// SessionAuthentication vive en una cookie httpOnly=false -- credentials:
+// 'include' en todo para que el navegador la mande. El token CSRF viaja
+// aparte, en el body de /auth/csrf/ y /auth/login/ (ver mas abajo), no en
+// la cookie -- header X-CSRFToken en cualquier metodo que no sea
+// GET/HEAD/OPTIONS.
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
-function leerCookie(nombre) {
-  const match = document.cookie.match(new RegExp('(^| )' + nombre + '=([^;]+)'));
-  return match ? decodeURIComponent(match[2]) : null;
-}
+// En produccion, frontend y backend viven en dominios *.up.railway.app
+// distintos -- document.cookie en el frontend nunca puede leer una cookie
+// que puso el backend (a diferencia de localhost:5183 -> :8010 en
+// desarrollo, mismo hostname). Por eso el token viaja en el body de
+// /auth/csrf/ y /auth/login/ (este ultimo porque Django lo rota al hacer
+// login) en vez de leerse de la cookie -- ver usuarios/views.py.
+let csrfTokenActual = null;
 
 const METODOS_SEGUROS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
@@ -24,8 +29,7 @@ async function peticion(path, { method = 'GET', body } = {}) {
   const headers = { Accept: 'application/json' };
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   if (!METODOS_SEGUROS.has(method)) {
-    const csrftoken = leerCookie('csrftoken');
-    if (csrftoken) headers['X-CSRFToken'] = csrftoken;
+    if (csrfTokenActual) headers['X-CSRFToken'] = csrfTokenActual;
   }
 
   // next/previous de DRF vienen como URL absoluta; el resto de las llamadas
@@ -59,8 +63,19 @@ async function peticion(path, { method = 'GET', body } = {}) {
 }
 
 export const api = {
-  primarCsrf: () => peticion('/api/auth/csrf/'),
-  login: (username, password) => peticion('/api/auth/login/', { method: 'POST', body: { username, password } }),
+  primarCsrf: async () => {
+    const datos = await peticion('/api/auth/csrf/');
+    csrfTokenActual = datos.csrftoken;
+    return datos;
+  },
+  login: async (username, password) => {
+    const { csrftoken, ...usuario } = await peticion('/api/auth/login/', {
+      method: 'POST',
+      body: { username, password },
+    });
+    csrfTokenActual = csrftoken;
+    return usuario;
+  },
   logout: () => peticion('/api/auth/logout/', { method: 'POST' }),
   yo: () => peticion('/api/auth/me/'),
 
