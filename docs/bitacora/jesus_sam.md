@@ -2,6 +2,23 @@
 
 > Formato y protocolo completo en `docs/protocolo-bitacora.md`. Entradas más recientes arriba.
 
+## 2026-08-26 — rama `jesus_sam` (18)
+
+**Resumen:** Desplegado el sistema principal (Django + React) a Railway, en el mismo proyecto (`laudable-mercy`) donde ya vivía la sub-herramienta estática. Dos servicios nuevos + Postgres:
+- **Postgres**: template oficial de Railway (`ghcr.io/railwayapp-templates/postgres-ssl:18`), con volumen persistente.
+- **backend** (`backend-production-31689.up.railway.app`): Django, rootDirectory=`backend`, rama `jesus_sam`. Preparación de producción: `gunicorn` + `whitenoise` (`CompressedManifestStaticFilesStorage`) agregados a `requirements.txt`/`settings.py`. Variables: `DJANGO_SECRET_KEY` (generada, nunca committeada), `DJANGO_DEBUG=False`, `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `CORS_ALLOWED_ORIGINS` apuntando al dominio del frontend. `ALLOWED_HOSTS` ya tomaba `RAILWAY_PUBLIC_DOMAIN` automáticamente (preparado de antes).
+- **frontend** (`frontend-production-14a4.up.railway.app`): Vite/React, rootDirectory=`frontend`, build `npm install && npm run build`, start `npx serve -s dist -l $PORT` (`-s` = SPA fallback, necesario por las rutas de react-router). `VITE_API_BASE_URL` apuntando al dominio del backend (variable de build, no runtime — Vite la hornea en el bundle).
+
+**Catálogo de CLUES pendiente**: la BD de producción arrancó vacía — no se cargó el catálogo completo (`data/raw/CLUES_IMB.xlsx` vive fuera de `backend/`, y `cargar_clues` no lo va a encontrar con `rootDirectory=backend`). Decisión tomada unilateralmente (el usuario no pudo responder la pregunta por un problema con la herramienta de preguntas): desplegar ya sin el catálogo, resolverlo después. El sistema funciona igual mientras tanto (captura manual de CLUES, ya previsto desde el diseño original).
+
+**Problema real encontrado con las herramientas de MCP de Railway** (no un bug del código): `create-deployment` con `branch: "jesus_sam"` ignoró silenciosamente el parámetro y desplegó `master` (que no tiene ni `backend/` ni `frontend/`) — se detectó porque el build falló con un error opaco ("railpack prepare exited with an error") y hubo que usar el agente de Railway para diagnosticarlo de verdad. Peor aún: mi herramienta `redeploy` de MCP **no relee la configuración vigente del servicio** — solo reinicia el deployment congelado anterior, así que cambios de `startCommand`/`preDeployCommand` quedaban guardados en la config pero nunca se ejecutaban. La solución fue usar el CLI local (`railway redeploy --from-source`), que sí fuerza un build fresco con la config actual. Lección para la próxima vez que se despliegue algo en Railway vía este MCP: después de cualquier `update-service`, usar el CLI con `--from-source` en vez de la herramienta `redeploy` del MCP.
+
+**Usuario inicial**: creé `jesus.hernandezh` (rol `super_admin`) directo en la BD de producción vía un paso temporal en `startCommand` (ya removido). Verificado con Playwright real contra las URLs públicas: login, cookies cross-origin, CORS, todo funciona sin errores de consola.
+
+**Bloqueadores activos:** Ninguno para que el usuario empiece a usarlo. El catálogo de CLUES en producción sigue pendiente (ver arriba).
+**Depende de / afecta a:** Si Jorge también va a desplegar algo en Railway con este MCP, que sepa lo del bug de `redeploy` antes de perder tiempo como yo.
+**Próximo:** A decidir con el usuario — cargar el catálogo completo de CLUES en producción, o seguir con captura manual por ahora.
+
 ## 2026-08-25 — rama `jesus_sam` (17)
 
 **Resumen:** El usuario probó la entrada (16) y, con razón, notó que la pestaña "Rutas" y el link "Editar →" ya sobraban una vez que se puede crear/eliminar todo desde `JornadaDetallePage`. Antes de borrarlos le pregunté explícitamente cómo quería seguir corrigiendo un dato de una unidad ya capturada (teléfono, quién recibe, etc.) sin esa pantalla — eligió edición inline en vez de "borrar y volver a capturar". Con eso resuelto: agregué botón "Editar" por fila en la tabla de unidades (precarga el formulario de "+ Agregar unidad", con CLUES bloqueado igual que antes, y guarda con PATCH en vez de POST), moví el botón "Descargar Excel" al topbar de esta misma vista (antes vivía en `RutasPage`, solo lo ve `usuario_entidad`), y eliminé por completo `RutasPage.jsx`, `ProgramacionVisitaPage.jsx`, las rutas `/rutas` y `/rutas/:id` en `App.jsx`, y el link+ícono "Rutas" del nav en `Shell.jsx` — verifiqué con grep que ningún otro archivo los seguía referenciando antes de borrar, y corrí `npm run build` al final para confirmar que no quedó ningún import roto.
