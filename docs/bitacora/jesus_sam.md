@@ -2,6 +2,20 @@
 
 > Formato y protocolo completo en `docs/protocolo-bitacora.md`. Entradas más recientes arriba.
 
+## 2026-08-26 — rama `jesus_sam` (19)
+
+**Resumen:** Dos bugs reales de producción encontrados y corregidos, más el trabajo de cargar el catálogo completo de CLUES en la BD de Railway.
+
+**Bug 1 — sesión parecía "expirar" sola:** `frontend-production-*.up.railway.app` y `backend-production-*.up.railway.app` son subdominios distintos, que el navegador trata como sitios diferentes (no como localhost:5183→:8010 en desarrollo, mismo hostname). Con `SESSION_COOKIE_SAMESITE`/`CSRF_COOKIE_SAMESITE` en su default (`Lax`), la cookie de sesión no viajaba de vuelta en los `fetch()` posteriores al login. Fix: `SameSite=None` + `Secure=True` cuando `DEBUG=False` (`backend/config/settings.py`), sin tocar desarrollo local.
+
+**Bug 2 — crear jornada y cerrar sesión daban 403 (CSRF), incluso con el bug 1 ya arreglado:** el frontend leía el token CSRF de `document.cookie`, pero un dominio nunca puede leer una cookie que puso otro dominio — esto nunca se notó en desarrollo porque ahí frontend/backend comparten hostname. El login funcionaba de pura casualidad (DRF no exige CSRF si todavía no hay sesión), pero cualquier escritura posterior (crear jornada, cerrar sesión, editar/borrar rutas y unidades) fallaba siempre. Fix: `/api/auth/csrf/` y `/api/auth/login/` ahora devuelven el token en el **body** de la respuesta (legible cross-origin, CORS ya lo permite) en vez de depender de la cookie; `login/` lo devuelve también porque Django rota el token al iniciar sesión. `frontend/src/api/client.js` guarda el valor en memoria (`csrfTokenActual`) y ya no usa `document.cookie` para esto. Probado con Playwright real contra producción: login → crear jornada → esperar 3s → recargar → sigue logueado → cerrar sesión, todo sin error.
+
+**Carga del catálogo completo en producción:** sin llaves SSH configuradas en esta máquina ni en la cuenta de Railway — hubo que generar una (`ssh-keygen`) y registrarla (`railway ssh keys add`) antes de poder abrir un túnel (`railway connect Postgres --tunnel-only`) hacia la base de datos privada. Al correr `cargar_clues` contra Postgres real (no SQLite) salió un bug de datos real: `UnidadMedica.tipo_unidad_medica` tiene `max_length=50`, pero al menos una tipología del Excel mide 57 caracteres ("CENTROS AVANZADOS DE ATENCIÓN PRIMARIA A LA SALUD (CAAPS)") — SQLite lo dejaba pasar silenciosamente, Postgres no. Se amplió a 100 (migración `catalogos.0003`). Además, cargar las ~10,573 filas en una sola transacción larga sobre un túnel SSH resultó tan frágil como se esperaba: se cortó a la mitad (~1,600 filas ya guardadas, no se perdieron). Se le agregó a `cargar_clues` un `--batch-size` (confirma cada N filas en vez de todo junto — cada upsert ya es idempotente, así que perder atomicidad global es seguro y permite retomar donde se cortó).
+
+**Bloqueadores activos:** Ninguno. La app en producción ya funciona de punta a punta (login, crear/editar/borrar, cerrar sesión).
+**Depende de / afecta a:** Si Jorge despliega algo con frontend/backend en dominios separados, que sepa de los bugs 1 y 2 — son inherentes a cualquier split-domain deployment con `SessionAuthentication` de DRF, no algo específico de este proyecto.
+**Próximo:** A decidir con el usuario.
+
 ## 2026-08-26 — rama `jesus_sam` (18)
 
 **Resumen:** Desplegado el sistema principal (Django + React) a Railway, en el mismo proyecto (`laudable-mercy`) donde ya vivía la sub-herramienta estática. Dos servicios nuevos + Postgres:
