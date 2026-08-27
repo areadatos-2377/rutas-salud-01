@@ -8,9 +8,31 @@ from .models import Jornada, ProgramacionVisita, Ruta
 
 
 class JornadaSerializer(serializers.ModelSerializer):
+    # Para que el frontend pueda advertir antes de borrar una jornada con
+    # datos ya capturados (en vez de un confirm() generico que no dice que
+    # se va a perder).
+    rutas_count = serializers.SerializerMethodField()
+    visitas_count = serializers.SerializerMethodField()
+
     class Meta:
         model = Jornada
-        fields = ["id", "nombre", "tipo", "categoria", "fecha_inicio", "fecha_fin", "estatus"]
+        fields = [
+            "id",
+            "nombre",
+            "tipo",
+            "categoria",
+            "fecha_inicio",
+            "fecha_fin",
+            "estatus",
+            "rutas_count",
+            "visitas_count",
+        ]
+
+    def get_rutas_count(self, obj):
+        return obj.rutas.count()
+
+    def get_visitas_count(self, obj):
+        return ProgramacionVisita.objects.filter(ruta__jornada=obj).count()
 
 
 class RutaSerializer(serializers.ModelSerializer):
