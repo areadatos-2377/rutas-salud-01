@@ -116,7 +116,7 @@ export default function JornadasPage() {
             />
           </div>
           <button className="btn-primary" type="submit" disabled={creando}>
-            {creando ? 'Creando…' : '+ Nueva jornada'}
+            {creando ? 'Creando…' : '+ Agregar distribución'}
           </button>
         </form>
       )}
