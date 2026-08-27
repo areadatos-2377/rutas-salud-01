@@ -2,11 +2,13 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth, ROLES } from './auth/AuthContext';
 import Shell from './components/Shell';
 import LoginPage from './pages/LoginPage';
+import ActivarCuentaPage from './pages/ActivarCuentaPage';
 import JornadasPage from './pages/JornadasPage';
 import JornadaDetallePage from './pages/JornadaDetallePage';
 import EntidadesPage from './pages/EntidadesPage';
 import CoordinadoresPage from './pages/CoordinadoresPage';
 import UnidadesMedicasPage from './pages/UnidadesMedicasPage';
+import UsuariosPage from './pages/UsuariosPage';
 
 function RequireAuth({ children }) {
   const { usuario, cargando } = useAuth();
@@ -31,6 +33,7 @@ export default function App() {
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/activar-cuenta/:uidb64/:token" element={<ActivarCuentaPage />} />
         <Route
           path="/"
           element={
@@ -63,6 +66,14 @@ export default function App() {
             element={
               <RequireRole roles={[ROLES.SUPER_ADMIN]}>
                 <UnidadesMedicasPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="catalogos/usuarios"
+            element={
+              <RequireRole roles={[ROLES.SUPER_ADMIN]}>
+                <UsuariosPage />
               </RequireRole>
             }
           />

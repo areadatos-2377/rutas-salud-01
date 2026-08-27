@@ -67,6 +67,9 @@ export default function Shell() {
                   <NavLink to="/catalogos/unidades" className="nav-item">
                     {ICONOS.catalogos} Unidades médicas
                   </NavLink>
+                  <NavLink to="/catalogos/usuarios" className="nav-item">
+                    {ICONOS.catalogos} Usuarios
+                  </NavLink>
                 </>
               )}
             </>
