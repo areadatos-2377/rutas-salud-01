@@ -62,6 +62,15 @@
   margin: 0;
 }
 
+.login-success {
+  background: var(--verde-pale-bg);
+  color: var(--verde-pale-tx);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 12.5px;
+  margin: 0;
+}
+
 .login-submit {
   width: 100%;
   justify-content: center;

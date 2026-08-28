@@ -272,7 +272,7 @@ export default function JornadaDetallePage() {
       <div className="topbar">
         <div>
           <p className="crumb">
-            <Link to="/jornadas">Jornadas</Link>
+            <Link to="/jornadas">Distribuciones</Link>
           </p>
           <h2>{jornada?.nombre || 'Cargando…'}</h2>
           {jornada && (

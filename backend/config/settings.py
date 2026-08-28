@@ -124,6 +124,10 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 50,
 }
 
+# Para armar el enlace completo de activacion de cuenta que ve el
+# super_admin (el backend no sabe en que dominio vive el frontend).
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5183")
+
 CORS_ALLOWED_ORIGINS = [
     o.strip()
     # 5173 es el default de Vite, pero en esta maquina ya lo ocupa otro

@@ -51,7 +51,7 @@ export default function Shell() {
         <nav className="nav">
           <div className="nav-section">Programación</div>
           <NavLink to="/jornadas" className="nav-item">
-            {ICONOS.jornadas} Jornadas
+            {ICONOS.jornadas} Distribuciones
           </NavLink>
           {(usuario?.rol === ROLES.ADMIN_NACIONAL || usuario?.rol === ROLES.SUPER_ADMIN) && (
             <>
@@ -66,6 +66,9 @@ export default function Shell() {
                   </NavLink>
                   <NavLink to="/catalogos/unidades" className="nav-item">
                     {ICONOS.catalogos} Unidades médicas
+                  </NavLink>
+                  <NavLink to="/catalogos/usuarios" className="nav-item">
+                    {ICONOS.catalogos} Usuarios
                   </NavLink>
                 </>
               )}
