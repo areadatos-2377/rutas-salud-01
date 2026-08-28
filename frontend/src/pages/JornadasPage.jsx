@@ -155,7 +155,7 @@ export default function JornadasPage() {
                 </td>
                 <td style={{ textAlign: 'right' }}>
                   <Link className="btn-ghost" to={`/jornadas/${j.id}`}>
-                    Ver rutas y unidades
+                    Ver unidades
                   </Link>
                 </td>
               </tr>

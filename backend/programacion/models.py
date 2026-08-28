@@ -79,17 +79,24 @@ class Ruta(models.Model):
 
 
 class ProgramacionVisita(models.Model):
-    ruta = models.ForeignKey(Ruta, on_delete=models.CASCADE, related_name="visitas")
+    jornada = models.ForeignKey(Jornada, on_delete=models.CASCADE, related_name="visitas")
+    # Las unidades se precargan al crear la jornada. La ruta se captura despues
+    # como un dato de la fila; este FK queda opcional para conservar las rutas
+    # historicas ya registradas.
+    ruta = models.ForeignKey(
+        Ruta, on_delete=models.SET_NULL, related_name="visitas", null=True, blank=True
+    )
+    ruta_numero = models.CharField(max_length=50, blank=True)
     unidad_medica = models.ForeignKey(
         UnidadMedica, on_delete=models.PROTECT, related_name="visitas_programadas"
     )
-    fecha_distribucion_programada = models.DateField()
+    fecha_distribucion_programada = models.DateField(null=True, blank=True)
     claves_a_desplazar = models.PositiveIntegerField(default=0)
     piezas_medicamento = models.PositiveIntegerField(default=0)
     piezas_material_curacion = models.PositiveIntegerField(default=0)
     # Capturado por fila (puede diferir del catalogo de la unidad), igual que en
     # tools/captura-programacion/.
-    tipo_unidad_medica = models.CharField(max_length=50, blank=True)
+    tipo_unidad_medica = models.CharField(max_length=100, blank=True)
     quien_recibe = models.CharField(max_length=150, blank=True)
     telefono = models.CharField(max_length=20, blank=True)
     correo = models.EmailField(blank=True)
@@ -101,7 +108,13 @@ class ProgramacionVisita(models.Model):
     class Meta:
         verbose_name = "programación de visita"
         verbose_name_plural = "programaciones de visita"
-        ordering = ["ruta", "unidad_medica"]
+        ordering = ["jornada", "unidad_medica"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["jornada", "unidad_medica"],
+                name="programacion_jornada_unidad_unica",
+            )
+        ]
 
     def clean(self):
         super().clean()
@@ -109,7 +122,7 @@ class ProgramacionVisita(models.Model):
         # de una ruta dentro de la misma jornada (blueprint-v01.md seccion 2.2).
         conflicto = (
             ProgramacionVisita.objects.filter(
-                ruta__jornada_id=self.ruta.jornada_id,
+                jornada_id=self.jornada_id,
                 unidad_medica_id=self.unidad_medica_id,
             )
             .exclude(pk=self.pk)
@@ -123,7 +136,7 @@ class ProgramacionVisita(models.Model):
         # Decision 2026-08-24: una jornada es de una sola categoria (primer
         # nivel, o segundo y tercer nivel) -- no se puede programar una unidad
         # cuyo nivel de atencion no corresponda a la categoria de la jornada.
-        categoria = self.ruta.jornada.categoria
+        categoria = self.jornada.categoria
         niveles_validos = Jornada.NIVELES_POR_CATEGORIA[categoria]
         if self.unidad_medica.nivel_atencion not in niveles_validos:
             categoria_label = dict(Jornada.CATEGORIA_CHOICES)[categoria]
@@ -133,4 +146,5 @@ class ProgramacionVisita(models.Model):
             )
 
     def __str__(self):
-        return f"{self.unidad_medica} — {self.fecha_distribucion_programada}"
+        fecha = self.fecha_distribucion_programada or "pendiente"
+        return f"{self.unidad_medica} — {fecha}"

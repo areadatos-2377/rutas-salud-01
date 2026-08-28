@@ -1,4 +1,3 @@
-from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from catalogos.models import Entidad
@@ -37,16 +36,32 @@ class RutaSerializer(serializers.ModelSerializer):
 
 class ProgramacionVisitaSerializer(serializers.ModelSerializer):
     unidad_medica_nombre = serializers.CharField(source="unidad_medica.nombre", read_only=True)
-    ruta_numero = serializers.CharField(source="ruta.numero_o_nombre", read_only=True)
+    unidad_medica_entidad = serializers.IntegerField(
+        source="unidad_medica.entidad_id", read_only=True
+    )
+    unidad_medica_entidad_nombre = serializers.CharField(
+        source="unidad_medica.entidad.nombre", read_only=True
+    )
+    unidad_medica_municipio = serializers.CharField(
+        source="unidad_medica.municipio", read_only=True
+    )
+    unidad_medica_nivel = serializers.CharField(
+        source="unidad_medica.nivel_atencion", read_only=True
+    )
 
     class Meta:
         model = ProgramacionVisita
         fields = [
             "id",
+            "jornada",
             "ruta",
             "ruta_numero",
             "unidad_medica",
             "unidad_medica_nombre",
+            "unidad_medica_entidad",
+            "unidad_medica_entidad_nombre",
+            "unidad_medica_municipio",
+            "unidad_medica_nivel",
             "fecha_distribucion_programada",
             "claves_a_desplazar",
             "piezas_medicamento",
@@ -57,32 +72,18 @@ class ProgramacionVisitaSerializer(serializers.ModelSerializer):
             "correo",
             "bloqueada",
         ]
+        read_only_fields = ["jornada", "ruta", "unidad_medica", "bloqueada"]
 
     def validate(self, attrs):
         request = self.context["request"]
-        ruta = attrs.get("ruta", self.instance.ruta if self.instance else None)
-        unidad_medica = attrs.get(
-            "unidad_medica", self.instance.unidad_medica if self.instance else None
-        )
+        if self.instance is None:
+            raise serializers.ValidationError(
+                "Las unidades se precargan automáticamente al crear la jornada."
+            )
 
-        # Un usuario_entidad no puede programar sobre la ruta de otra entidad
-        # (defensa en profundidad: get_queryset del viewset ya lo evita en
-        # list/retrieve, esto cubre el create/update donde el cliente elige la ruta).
-        if request.user.rol == Usuario.ROL_USUARIO_ENTIDAD and ruta.entidad_id != request.user.entidad_id:
+        if (
+            request.user.rol == Usuario.ROL_USUARIO_ENTIDAD
+            and self.instance.unidad_medica.entidad_id != request.user.entidad_id
+        ):
             raise serializers.ValidationError("No puedes programar sobre una ruta de otra entidad.")
-
-        # Reusa la regla de negocio del modelo (blueprint-v01.md seccion 2.2):
-        # una unidad medica no puede estar en mas de una ruta de la misma jornada.
-        # ModelSerializer no llama full_clean()/clean() del modelo automaticamente,
-        # asi que se invoca aqui a mano.
-        instancia = ProgramacionVisita(
-            pk=self.instance.pk if self.instance else None,
-            ruta=ruta,
-            unidad_medica=unidad_medica,
-        )
-        try:
-            instancia.clean()
-        except DjangoValidationError as exc:
-            raise serializers.ValidationError(getattr(exc, "message_dict", exc.messages))
-
         return attrs
