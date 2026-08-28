@@ -28,6 +28,15 @@ _railway_domain = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
 if _railway_domain:
     ALLOWED_HOSTS.append(_railway_domain)
 
+# Railway termina HTTPS en su proxy y le manda HTTP liso al contenedor -- sin
+# esto, Django cree que toda peticion es HTTP, y arma los links "next" de
+# paginacion (request.build_absolute_uri) como http://, que el navegador
+# bloquea como "Mixed Content" al pedirlos desde una pagina https:// (asi
+# se manifesto: api.getAll() fallaba en cuanto una lista pasaba de 50 filas
+# y habia que pedir la pagina 2). No afecta desarrollo local: el dev server
+# de Django nunca manda este header a si mismo.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 
 INSTALLED_APPS = [
     "django.contrib.admin",
