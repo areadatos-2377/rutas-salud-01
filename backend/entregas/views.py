@@ -8,7 +8,7 @@ from usuarios.permissions import PuedeGestionarProgramacion
 
 from . import storage
 from .models import Entrega, EvidenciaArchivo
-from .serializers import EntregaSerializer, EvidenciaArchivoSerializer
+from .serializers import EntregaSerializer, EvidenciaArchivoConsultaSerializer, EvidenciaArchivoSerializer
 
 
 class EntregaViewSet(viewsets.ModelViewSet):
@@ -76,20 +76,30 @@ class EntregaViewSet(viewsets.ModelViewSet):
 
 
 class EvidenciaArchivoViewSet(viewsets.ModelViewSet):
-    # Subir es exclusivamente via EntregaViewSet.subir_evidencia -- aqui
-    # solo se puede consultar/borrar una evidencia ya existente.
+    # Subir es exclusivamente via EntregaViewSet.subir_evidencia -- aqui se
+    # consulta lo ya subido (pantalla de consulta, con filtros) y se borra.
     http_method_names = ["get", "delete", "head", "options"]
     queryset = EvidenciaArchivo.objects.select_related(
-        "entrega__programacion_visita__unidad_medica__entidad"
-    ).all()
-    serializer_class = EvidenciaArchivoSerializer
+        "subido_por",
+        "entrega__programacion_visita__jornada",
+        "entrega__programacion_visita__unidad_medica__entidad",
+    ).order_by("-creado_en")
+    serializer_class = EvidenciaArchivoConsultaSerializer
     permission_classes = [permissions.IsAuthenticated, PuedeGestionarProgramacion]
 
     def get_queryset(self):
         qs = super().get_queryset()
         usuario = self.request.user
+        # usuario_entidad solo ve lo de su propia entidad; admin_nacional y
+        # super_admin ven todo lo subido, sin restriccion.
         if usuario.rol == Usuario.ROL_USUARIO_ENTIDAD:
             qs = qs.filter(entrega__programacion_visita__unidad_medica__entidad=usuario.entidad)
+        jornada_id = self.request.query_params.get("jornada")
+        if jornada_id:
+            qs = qs.filter(entrega__programacion_visita__jornada_id=jornada_id)
+        entidad_id = self.request.query_params.get("entidad")
+        if entidad_id:
+            qs = qs.filter(entrega__programacion_visita__unidad_medica__entidad_id=entidad_id)
         return qs
 
     def perform_destroy(self, instance):

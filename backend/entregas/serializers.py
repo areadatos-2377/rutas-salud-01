@@ -26,3 +26,35 @@ class EntregaSerializer(serializers.ModelSerializer):
         model = Entrega
         fields = ["id", "programacion_visita", "entregado", "fecha_entrega", "evidencias"]
         read_only_fields = ["programacion_visita"]
+
+
+class EvidenciaArchivoConsultaSerializer(serializers.ModelSerializer):
+    """Para la pantalla de consulta (lista todo lo subido, con el contexto de
+    a que distribucion/entidad/unidad pertenece) -- distinto del serializer
+    del panel porque ahi el contexto ya se conoce (una sola unidad a la vez)."""
+
+    url_descarga = serializers.SerializerMethodField()
+    subido_por_nombre = serializers.CharField(source="subido_por.username", read_only=True)
+    jornada_id = serializers.IntegerField(source="entrega.programacion_visita.jornada_id", read_only=True)
+    jornada_nombre = serializers.CharField(source="entrega.programacion_visita.jornada.nombre", read_only=True)
+    entidad_nombre = serializers.CharField(
+        source="entrega.programacion_visita.unidad_medica.entidad.nombre", read_only=True
+    )
+    unidad_medica_clues = serializers.CharField(source="entrega.programacion_visita.unidad_medica_id", read_only=True)
+    unidad_medica_nombre = serializers.CharField(
+        source="entrega.programacion_visita.unidad_medica.nombre", read_only=True
+    )
+    entregado = serializers.BooleanField(source="entrega.entregado", read_only=True)
+    fecha_entrega = serializers.DateField(source="entrega.fecha_entrega", read_only=True)
+
+    class Meta:
+        model = EvidenciaArchivo
+        fields = [
+            "id", "tipo", "nombre_original", "creado_en", "url_descarga", "subido_por_nombre",
+            "jornada_id", "jornada_nombre", "entidad_nombre", "unidad_medica_clues",
+            "unidad_medica_nombre", "entregado", "fecha_entrega",
+        ]
+        read_only_fields = fields
+
+    def get_url_descarga(self, obj):
+        return generar_url_descarga(obj.ruta_almacen)
