@@ -110,7 +110,7 @@ class ProgramacionVisitaSerializer(serializers.ModelSerializer):
         request = self.context["request"]
         if self.instance is None:
             raise serializers.ValidationError(
-                "Las unidades se precargan automáticamente al crear la jornada."
+                "Las unidades se precargan automáticamente al crear la distribución."
             )
 
         if (

@@ -32,7 +32,7 @@ export default function JornadasPage() {
     try {
       setJornadas(await api.getAll('/api/jornadas/'));
     } catch {
-      setError('No se pudieron cargar las jornadas.');
+      setError('No se pudieron cargar las distribuciones.');
     }
   }
 
@@ -216,7 +216,7 @@ export default function JornadasPage() {
               <tr><td colSpan={7} className="tabla-vacia">Cargando…</td></tr>
             )}
             {jornadas?.length === 0 && (
-              <tr><td colSpan={7} className="tabla-vacia">Todavía no hay jornadas.</td></tr>
+              <tr><td colSpan={7} className="tabla-vacia">Todavía no hay distribuciones.</td></tr>
             )}
             {jornadas?.map((j) => (
               <tr key={j.id}>

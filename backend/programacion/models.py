@@ -56,8 +56,11 @@ class Jornada(models.Model):
     estatus = models.CharField(max_length=20, choices=ESTATUS_CHOICES, default=ESTATUS_PLANEADA)
 
     class Meta:
-        verbose_name = "jornada"
-        verbose_name_plural = "jornadas"
+        # Solo texto visible (admin de Django) -- el modelo/tabla/API siguen
+        # llamandose "jornada" por dentro, decision explicita para no arriesgar
+        # una migracion de renombrado sin beneficio funcional.
+        verbose_name = "distribución"
+        verbose_name_plural = "distribuciones"
         ordering = ["-fecha_inicio"]
 
     def __str__(self):
@@ -130,7 +133,7 @@ class ProgramacionVisita(models.Model):
         )
         if conflicto:
             raise ValidationError(
-                "Esta unidad médica ya está programada en otra ruta de la misma jornada."
+                "Esta unidad médica ya está programada en otra ruta de la misma distribución."
             )
 
         # Decision 2026-08-24: una jornada es de una sola categoria (primer
@@ -141,7 +144,7 @@ class ProgramacionVisita(models.Model):
         if self.unidad_medica.nivel_atencion not in niveles_validos:
             categoria_label = dict(Jornada.CATEGORIA_CHOICES)[categoria]
             raise ValidationError(
-                f"Esta jornada es de categoría «{categoria_label}»; "
+                f"Esta distribución es de categoría «{categoria_label}»; "
                 f"«{self.unidad_medica}» es de {self.unidad_medica.nivel_atencion.lower()}."
             )
 

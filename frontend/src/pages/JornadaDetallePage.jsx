@@ -46,7 +46,7 @@ export default function JornadaDetallePage() {
   useEffect(() => {
     api.get(`/api/jornadas/${id}/`)
       .then(setJornada)
-      .catch(() => setError('No se pudo cargar la jornada.'));
+      .catch(() => setError('No se pudo cargar la distribución.'));
   }, [id]);
 
   useEffect(() => {
@@ -65,7 +65,7 @@ export default function JornadaDetallePage() {
     setError(null);
     api.getAll(`/api/programacion-visitas/?jornada=${id}&entidad=${entidadId}`)
       .then(setVisitas)
-      .catch(() => setError('No se pudieron cargar las unidades de la jornada.'));
+      .catch(() => setError('No se pudieron cargar las unidades de la distribución.'));
   }, [id, entidadId]);
 
   function onEditar(visita) {
@@ -108,13 +108,13 @@ export default function JornadaDetallePage() {
   }
 
   async function onEliminar(visita) {
-    if (!confirm(`¿Eliminar ${visita.unidad_medica} de esta jornada?`)) return;
+    if (!confirm(`¿Eliminar ${visita.unidad_medica} de esta distribución?`)) return;
     try {
       await api.del(`/api/programacion-visitas/${visita.id}/`);
       setVisitas((actuales) => actuales.filter((fila) => fila.id !== visita.id));
       if (editandoId === visita.id) onCancelarEdicion();
     } catch {
-      setError('No se pudo eliminar la unidad de la jornada.');
+      setError('No se pudo eliminar la unidad de la distribución.');
     }
   }
 
