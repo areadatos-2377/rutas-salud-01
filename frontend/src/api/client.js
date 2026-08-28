@@ -26,8 +26,13 @@ export class ApiError extends Error {
 }
 
 async function peticion(path, { method = 'GET', body } = {}) {
+  // FormData (subida de archivos): el navegador arma su propio Content-Type
+  // con el boundary correcto -- si lo ponemos nosotros a mano, el multipart
+  // queda mal formado. Tampoco se serializa a JSON.
+  const esFormData = body instanceof FormData;
+
   const headers = { Accept: 'application/json' };
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (body !== undefined && !esFormData) headers['Content-Type'] = 'application/json';
   if (!METODOS_SEGUROS.has(method)) {
     if (csrfTokenActual) headers['X-CSRFToken'] = csrfTokenActual;
   }
@@ -40,7 +45,7 @@ async function peticion(path, { method = 'GET', body } = {}) {
     method,
     headers,
     credentials: 'include',
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body: body === undefined ? undefined : esFormData ? body : JSON.stringify(body),
   });
 
   if (resp.status === 204) return null;

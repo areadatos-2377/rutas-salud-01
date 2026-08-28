@@ -137,6 +137,15 @@ REST_FRAMEWORK = {
 # super_admin (el backend no sabe en que dominio vive el frontend).
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5183")
 
+# Cloudflare R2 (compatible S3) para evidencia de entregas -- ver
+# entregas/storage.py y blueprint/setup-cloudflare-r2.md. Sin default de
+# credenciales (no hay uno seguro); si faltan, solo los endpoints de
+# evidencia fallan, el resto de la app sigue funcionando normal.
+STORAGE_ENDPOINT_URL = os.environ.get("STORAGE_ENDPOINT_URL")
+STORAGE_ACCESS_KEY_ID = os.environ.get("STORAGE_ACCESS_KEY_ID")
+STORAGE_SECRET_ACCESS_KEY = os.environ.get("STORAGE_SECRET_ACCESS_KEY")
+STORAGE_BUCKET_NAME = os.environ.get("STORAGE_BUCKET_NAME", "rutas-evidencias")
+
 CORS_ALLOWED_ORIGINS = [
     o.strip()
     # 5173 es el default de Vite, pero en esta maquina ya lo ocupa otro
