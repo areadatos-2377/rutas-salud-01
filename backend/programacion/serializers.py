@@ -102,7 +102,9 @@ class ProgramacionVisitaSerializer(serializers.ModelSerializer):
             "correo",
             "bloqueada",
         ]
-        read_only_fields = ["jornada", "ruta", "unidad_medica", "bloqueada"]
+        # tipo_unidad_medica viene del catalogo (UnidadMedica.tipo_unidad_medica)
+        # al precargarse -- no debe poder editarse a mano y desincronizarse.
+        read_only_fields = ["jornada", "ruta", "unidad_medica", "bloqueada", "tipo_unidad_medica"]
 
     def validate(self, attrs):
         request = self.context["request"]

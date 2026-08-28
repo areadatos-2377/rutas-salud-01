@@ -229,7 +229,7 @@ export default function JornadaDetallePage() {
           </div>
           <div className="field">
             <label htmlFor="tipoUnidad">Tipo de unidad</label>
-            <input id="tipoUnidad" value={formulario.tipo_unidad_medica} onChange={(e) => setFormulario({ ...formulario, tipo_unidad_medica: e.target.value })} />
+            <input id="tipoUnidad" value={formulario.tipo_unidad_medica} disabled title="Viene del catálogo de unidades médicas, no se puede editar aquí" />
           </div>
           <div className="field">
             <label htmlFor="recibe">¿Quién recibe?</label>
