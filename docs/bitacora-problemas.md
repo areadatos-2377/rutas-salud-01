@@ -60,7 +60,31 @@ servidor estaba bien, el problema vivía en la política de cookies del
 navegador cliente. Confirmado revisando la Public Suffix List de Mozilla
 y viendo que `up.railway.app` está listada.
 
-**Efecto secundario al desplegar el proxy — `DisallowedHost` (400):**
+**Efecto secundario #2 — falso "sesión expiró" justo después de un login
+exitoso:** Después del fix de raíz, apareció una variante nueva del mismo
+mensaje, esta vez inmediata: el login devolvía `200` pero la app volvía a
+mostrar "tu sesión expiró" y se quedaba en `/login`. Causa: una carrera
+preexistente (no introducida por el proxy, pero mucho más fácil de
+disparar con el salto de red extra que agrega) entre el login del usuario
+y la llamada a `/api/auth/me/` que `AuthProvider` dispara al montar (para
+saber si ya había sesión activa). Si el `401` esperado de esa llamada
+inicial resolvía *después* de un login exitoso, dos lugares del código la
+malinterpretaban como "la sesión que acabas de iniciar ya expiró":
+1. El manejador global de `401` en `client.js`, que disparaba el evento
+   `sesion-expirada` para cualquier `401` salvo el del propio login.
+2. El `catch` del efecto de montaje en `AuthContext.jsx`, que hacía
+   `setUsuario(null)` sin condición — pisando el usuario que el login ya
+   había puesto.
+
+Solución: excluir también `/api/auth/me/` del disparo del evento (un 401
+ahí es "todavía no has iniciado sesión", no "tu sesión expiró"), y
+cambiar el `catch` del montaje a `setUsuario((actual) => actual ?? null)`
+— solo limpia si de verdad seguía sin sesión. Probado localmente
+corriendo el login repetidas veces seguidas contra el proxy hasta
+reproducir la carrera a propósito (la llamada a `/me/` resolviendo
+después del login) y confirmando que ya no pasa nada raro.
+
+**Efecto secundario #1 al desplegar el proxy — `DisallowedHost` (400):**
 Con `USE_X_FORWARDED_HOST=True`, Django valida `ALLOWED_HOSTS` contra el
 header `X-Forwarded-Host`, **no** contra el host real de la conexión TCP.
 El proxy manda ahí el dominio público del frontend (para que
