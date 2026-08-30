@@ -7,6 +7,7 @@ modelo de datos y las reglas de negocio detrás de estos apps.
 
 import os
 from pathlib import Path
+from urllib.parse import urlparse
 
 import dj_database_url
 from dotenv import load_dotenv
@@ -34,6 +35,16 @@ if _railway_domain:
 _railway_private_domain = os.environ.get("RAILWAY_PRIVATE_DOMAIN")
 if _railway_private_domain:
     ALLOWED_HOSTS.append(_railway_private_domain)
+
+# Con USE_X_FORWARDED_HOST=True (mas abajo), Django valida ALLOWED_HOSTS
+# contra el header X-Forwarded-Host, no contra el Host real de la conexion
+# TCP -- y el proxy manda ahi el dominio publico del frontend (ver
+# frontend/server.js), no el dominio privado de arriba. Sin agregarlo aqui
+# tambien, toda peticion via el proxy se rechaza con DisallowedHost aunque
+# el dominio privado si este en la lista.
+_frontend_host = urlparse(os.environ.get("FRONTEND_URL", "")).hostname
+if _frontend_host:
+    ALLOWED_HOSTS.append(_frontend_host)
 
 # Railway termina HTTPS en su proxy y le manda HTTP liso al contenedor -- sin
 # esto, Django cree que toda peticion es HTTP, y arma los links "next" de
