@@ -69,7 +69,17 @@ async function peticion(path, { method = 'GET', body } = {}) {
     // AuthContext para que limpie el estado y mande a /login, en vez de que
     // cada pantalla tenga que manejar esto por su cuenta. 403 es distinto
     // (autenticado pero sin permiso) y no debe cerrar la sesion.
-    if (resp.status === 401 && !path.includes('/api/auth/login/')) {
+    //
+    // /api/auth/me/ tambien se excluye ademas de login: AuthProvider lo
+    // llama al montar para saber si ya hay sesion activa, y un 401 ahi es
+    // el resultado normal de "todavia no has iniciado sesion", no evidencia
+    // de que una sesion valida haya expirado. Sin esta exclusion habia una
+    // carrera real: esa llamada inicial (disparada en el mount, antes de
+    // que el usuario llene el formulario) podia resolver DESPUES de un
+    // login exitoso -- y como para entonces `usuario` ya estaba puesto,
+    // el 401 tardio de esa peticion vieja se interpretaba como "tu sesion
+    // recien iniciada ya expiro", deslogueando al usuario en el acto.
+    if (resp.status === 401 && !path.includes('/api/auth/login/') && !path.includes('/api/auth/me/')) {
       window.dispatchEvent(new CustomEvent('sesion-expirada'));
     }
     throw new ApiError(resp.status, data);
