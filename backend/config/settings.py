@@ -28,6 +28,13 @@ _railway_domain = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
 if _railway_domain:
     ALLOWED_HOSTS.append(_railway_domain)
 
+# El proxy del frontend (ver frontend/server.js) le habla al backend por la
+# red privada de Railway, no por el dominio publico -- sin esto Django
+# rechaza esas peticiones con DisallowedHost.
+_railway_private_domain = os.environ.get("RAILWAY_PRIVATE_DOMAIN")
+if _railway_private_domain:
+    ALLOWED_HOSTS.append(_railway_private_domain)
+
 # Railway termina HTTPS en su proxy y le manda HTTP liso al contenedor -- sin
 # esto, Django cree que toda peticion es HTTP, y arma los links "next" de
 # paginacion (request.build_absolute_uri) como http://, que el navegador
@@ -36,6 +43,14 @@ if _railway_domain:
 # y habia que pedir la pagina 2). No afecta desarrollo local: el dev server
 # de Django nunca manda este header a si mismo.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# Las peticiones al backend ahora llegan via el proxy del frontend (red
+# privada de Railway), no directo del navegador -- sin esto,
+# request.build_absolute_uri() (los links "next"/"previous" de paginacion)
+# usaria el hostname interno backend.railway.internal, que el navegador no
+# puede resolver. El proxy manda el host publico real en X-Forwarded-Host
+# (ver frontend/server.js).
+USE_X_FORWARDED_HOST = True
 
 
 INSTALLED_APPS = [

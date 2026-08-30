@@ -5,14 +5,24 @@
 // la cookie -- header X-CSRFToken en cualquier metodo que no sea
 // GET/HEAD/OPTIONS.
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+// En produccion vacio a proposito: el navegador le habla al mismo origen
+// (frontend-production-*.up.railway.app) y el servidor Node del frontend
+// (ver frontend/server.js) reenvia /api/* al backend por la red privada de
+// Railway. up.railway.app esta en la Public Suffix List -- frontend y
+// backend en subdominios *.up.railway.app son "sitios" distintos para el
+// navegador, asi que una cookie de sesion puesta por el backend cruzando
+// esos dominios es de tercero, y navegadores con bloqueo de cookies de
+// terceros (Safari, Chrome/Edge/Firefox con esa opcion activada) nunca la
+// guardan -- eso causaba "tu sesion expiro" en el login para algunos
+// usuarios aunque las credenciales fueran correctas. Con el proxy de mismo
+// origen ya no hay cruce de dominios y el problema desaparece de raiz.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
-// En produccion, frontend y backend viven en dominios *.up.railway.app
-// distintos -- document.cookie en el frontend nunca puede leer una cookie
-// que puso el backend (a diferencia de localhost:5183 -> :8010 en
-// desarrollo, mismo hostname). Por eso el token viaja en el body de
-// /auth/csrf/ y /auth/login/ (este ultimo porque Django lo rota al hacer
-// login) en vez de leerse de la cookie -- ver usuarios/views.py.
+// El token CSRF viaja aparte, en el body de /auth/csrf/ y /auth/login/
+// (este ultimo porque Django lo rota al hacer login) en vez de leerse de
+// la cookie -- se dejo asi porque en desarrollo local (localhost:5183 ->
+// :8010) frontend y backend siguen siendo hostnames distintos y
+// document.cookie no puede leer la cookie del otro. Ver usuarios/views.py.
 let csrfTokenActual = null;
 
 const METODOS_SEGUROS = new Set(['GET', 'HEAD', 'OPTIONS']);
