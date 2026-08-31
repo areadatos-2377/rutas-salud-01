@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, ApiError } from '../api/client';
+import { comprimirImagen } from '../utils/comprimirImagen';
 import './EvidenciaPanel.css';
 
 // "documento" agrupa dos tipos del backend (pdf y documento, inferidos por
@@ -48,8 +49,12 @@ export default function EvidenciaPanel({ visita, onCerrar }) {
     setError(null);
     try {
       for (const archivo of archivos) {
+        // Solo las fotos se comprimen -- documentos y video se suben tal
+        // cual (comprimir un PDF o un video ya es otro problema, ver
+        // conversacion sobre miniaturas si esto no basta).
+        const archivoFinal = categoria.key === 'imagen' ? await comprimirImagen(archivo) : archivo;
         const formData = new FormData();
-        formData.append('file', archivo);
+        formData.append('file', archivoFinal);
         const evidencia = await api.post(`/api/entregas/${entrega.id}/evidencias/`, formData);
         setEntrega((actual) => ({ ...actual, evidencias: [evidencia, ...actual.evidencias] }));
       }
