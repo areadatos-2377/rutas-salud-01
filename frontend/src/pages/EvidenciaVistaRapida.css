@@ -15,18 +15,47 @@
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 12px;
 }
-.evidencia-vista-rapida__grid a {
+.evidencia-vista-rapida__grid a,
+.evidencia-vista-rapida__seleccionable {
   display: block;
+  position: relative;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   overflow: hidden;
   aspect-ratio: 1;
+  padding: 0;
+  background: none;
+  cursor: pointer;
 }
 .evidencia-vista-rapida__grid img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+}
+.evidencia-vista-rapida__seleccionable.seleccionada {
+  border: 3px solid var(--guinda);
+}
+.evidencia-vista-rapida__check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--guinda);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.evidencia-vista-rapida__ayuda {
+  font-size: 12.5px;
+  color: var(--gray-tx);
+  margin: -4px 0 14px;
 }
 
 .evidencia-vista-rapida__videos {

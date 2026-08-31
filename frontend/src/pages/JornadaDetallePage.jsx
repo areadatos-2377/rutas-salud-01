@@ -4,6 +4,7 @@ import { api, ApiError } from '../api/client';
 import { useAuth, ROLES } from '../auth/AuthContext';
 import { CATEGORIA_LABEL } from '../utils/categoriaNiveles';
 import { exportarProgramacionExcel } from '../utils/exportarProgramacionExcel';
+import { exportarPresentacionEvidencia } from '../utils/exportarPresentacionEvidencia';
 import EvidenciaPanel from './EvidenciaPanel';
 import EvidenciaVistaRapida from './EvidenciaVistaRapida';
 import '../styles/table.css';
@@ -30,6 +31,7 @@ export default function JornadaDetallePage() {
   const { usuario } = useAuth();
   const puedeEscribir = usuario?.rol === ROLES.USUARIO_ENTIDAD || usuario?.rol === ROLES.SUPER_ADMIN;
   const requiereSelectorEntidad = usuario?.rol !== ROLES.USUARIO_ENTIDAD;
+  const puedeGenerarPresentacion = usuario?.rol === ROLES.ADMIN_NACIONAL || usuario?.rol === ROLES.SUPER_ADMIN;
 
   const [jornada, setJornada] = useState(null);
   const [entidades, setEntidades] = useState([]);
@@ -46,6 +48,13 @@ export default function JornadaDetallePage() {
   const [exportando, setExportando] = useState(false);
   const [visitaEvidencia, setVisitaEvidencia] = useState(null);
   const [vistaRapida, setVistaRapida] = useState(null);
+  const [modoSeleccion, setModoSeleccion] = useState(false);
+  // { [visitaId]: { evidenciaId, urlDescarga, clues, nombreUnidad, entidadNombre } }
+  // -- vive aqui (no en el selector de entidad) para que sobreviva al
+  // cambiar de entidad en el dropdown: se puede ir marcando fotos de
+  // varias entidades antes de generar una sola presentacion con todo.
+  const [fotosSeleccionadas, setFotosSeleccionadas] = useState({});
+  const [generandoPresentacion, setGenerandoPresentacion] = useState(false);
 
   useEffect(() => {
     api.get(`/api/jornadas/${id}/`)
@@ -134,6 +143,40 @@ export default function JornadaDetallePage() {
     }
   }
 
+  function onSeleccionarFoto(visita, evidencia) {
+    setFotosSeleccionadas((actuales) => {
+      const yaEsEsta = actuales[visita.id]?.evidenciaId === evidencia.id;
+      const copia = { ...actuales };
+      if (yaEsEsta) {
+        // Volver a dar clic en la misma foto la desmarca.
+        delete copia[visita.id];
+      } else {
+        copia[visita.id] = {
+          evidenciaId: evidencia.id,
+          urlDescarga: evidencia.url_descarga,
+          clues: visita.unidad_medica,
+          nombreUnidad: visita.unidad_medica_nombre,
+          entidadNombre: visita.unidad_medica_entidad_nombre,
+        };
+      }
+      return copia;
+    });
+  }
+
+  async function onGenerarPresentacion() {
+    setGenerandoPresentacion(true);
+    setError(null);
+    try {
+      await exportarPresentacionEvidencia({ jornada, fotos: Object.values(fotosSeleccionadas) });
+      setFotosSeleccionadas({});
+      setModoSeleccion(false);
+    } catch {
+      setError('No se pudo generar la presentación.');
+    } finally {
+      setGenerandoPresentacion(false);
+    }
+  }
+
   const termino = busqueda.trim().toLocaleLowerCase('es');
   const filasVisibles = visitas?.filter((visita) => {
     if (!termino) return true;
@@ -172,6 +215,23 @@ export default function JornadaDetallePage() {
           <button className="btn-ghost" onClick={onExportar} disabled={exportando}>
             {exportando ? 'Generando…' : 'Descargar Excel'}
           </button>
+        )}
+        {puedeGenerarPresentacion && visitas && (
+          <div className="jornada-topbar__presentacion">
+            {modoSeleccion && (
+              <span className="jornada-topbar__contador">
+                {Object.keys(fotosSeleccionadas).length} foto{Object.keys(fotosSeleccionadas).length === 1 ? '' : 's'} elegida{Object.keys(fotosSeleccionadas).length === 1 ? '' : 's'}
+              </span>
+            )}
+            {modoSeleccion && Object.keys(fotosSeleccionadas).length > 0 && (
+              <button className="btn-primary" onClick={onGenerarPresentacion} disabled={generandoPresentacion}>
+                {generandoPresentacion ? 'Generando…' : 'Generar presentación'}
+              </button>
+            )}
+            <button className="btn-ghost" onClick={() => setModoSeleccion((actual) => !actual)}>
+              {modoSeleccion ? 'Cancelar selección' : 'Generar presentación'}
+            </button>
+          </div>
         )}
       </div>
 
@@ -294,41 +354,47 @@ export default function JornadaDetallePage() {
                   <td>{visita.telefono || '—'}</td>
                   <td>{visita.correo || '—'}</td>
                   <td className="jornada-acciones">
+                    {/* Marcadores: visibles para cualquiera que llegue a esta tabla
+                        (incluye admin_nacional, que no puede editar pero si elegir
+                        fotos para la presentacion) -- Evidencia/Editar/Eliminar
+                        siguen abajo, solo para quien puede escribir. */}
+                    {(visita.ruta_numero || visita.fecha_distribucion_programada) && (
+                      <>
+                        {visita.tiene_evidencia_imagen && (
+                          <button
+                            className={`jornada-marcador${fotosSeleccionadas[visita.id] ? ' jornada-marcador--seleccionada' : ''}`}
+                            title={modoSeleccion ? 'Elegir foto para la presentación' : 'Ver imágenes subidas'}
+                            onClick={() => setVistaRapida({ visita, categoria: 'imagen' })}
+                          >
+                            🖼️
+                          </button>
+                        )}
+                        {visita.tiene_evidencia_documento && (
+                          <button
+                            className="jornada-marcador"
+                            title="Ver documentos subidos"
+                            onClick={() => setVistaRapida({ visita, categoria: 'documento' })}
+                          >
+                            📄
+                          </button>
+                        )}
+                        {visita.tiene_evidencia_video && (
+                          <button
+                            className="jornada-marcador"
+                            title="Ver video subido"
+                            onClick={() => setVistaRapida({ visita, categoria: 'video' })}
+                          >
+                            🎞️
+                          </button>
+                        )}
+                      </>
+                    )}
                     {puedeEscribir && (
                       <>
                         {/* Evidencia solo tiene sentido si ya hay algo capturado -- no en
                             las miles de filas precargadas todavia vacias. */}
                         {(visita.ruta_numero || visita.fecha_distribucion_programada) && (
-                          <>
-                            {visita.tiene_evidencia_imagen && (
-                              <button
-                                className="jornada-marcador"
-                                title="Ver imágenes subidas"
-                                onClick={() => setVistaRapida({ visita, categoria: 'imagen' })}
-                              >
-                                🖼️
-                              </button>
-                            )}
-                            {visita.tiene_evidencia_documento && (
-                              <button
-                                className="jornada-marcador"
-                                title="Ver documentos subidos"
-                                onClick={() => setVistaRapida({ visita, categoria: 'documento' })}
-                              >
-                                📄
-                              </button>
-                            )}
-                            {visita.tiene_evidencia_video && (
-                              <button
-                                className="jornada-marcador"
-                                title="Ver video subido"
-                                onClick={() => setVistaRapida({ visita, categoria: 'video' })}
-                              >
-                                🎞️
-                              </button>
-                            )}
-                            <button className="btn-ghost" onClick={() => setVisitaEvidencia(visita)}>Evidencia</button>
-                          </>
+                          <button className="btn-ghost" onClick={() => setVisitaEvidencia(visita)}>Evidencia</button>
                         )}
                         <button className="btn-ghost" onClick={() => onEditar(visita)}>Editar</button>
                         <button className="btn-ghost" onClick={() => onEliminar(visita)}>Eliminar</button>
@@ -363,6 +429,9 @@ export default function JornadaDetallePage() {
           visita={vistaRapida.visita}
           categoria={vistaRapida.categoria}
           onCerrar={() => setVistaRapida(null)}
+          seleccionable={modoSeleccion && vistaRapida.categoria === 'imagen'}
+          seleccionActualId={fotosSeleccionadas[vistaRapida.visita.id]?.evidenciaId ?? null}
+          onSeleccionar={(evidencia) => onSeleccionarFoto(vistaRapida.visita, evidencia)}
         />
       )}
     </div>
