@@ -81,15 +81,31 @@ export default function EvidenciaPanel({ visita, onCerrar }) {
     }
   }
 
+  // Cada archivo ya se guarda al instante al subirlo (no hay "borrador" que
+  // confirmar) -- lo que faltaba era avisarle a la tabla que hay evidencia
+  // nueva sin que el usuario tuviera que recargar la pagina para verla.
+  function cerrarConResumen() {
+    if (!entrega) {
+      onCerrar();
+      return;
+    }
+    const tipos = entrega.evidencias.map((ev) => ev.tipo);
+    onCerrar({
+      tiene_evidencia_imagen: tipos.includes('foto'),
+      tiene_evidencia_documento: tipos.includes('pdf') || tipos.includes('documento'),
+      tiene_evidencia_video: tipos.includes('video'),
+    });
+  }
+
   return (
-    <div className="evidencia-overlay" onClick={onCerrar}>
+    <div className="evidencia-overlay" onClick={cerrarConResumen}>
       <div className="evidencia-panel" onClick={(e) => e.stopPropagation()}>
         <div className="evidencia-panel__header">
           <div>
             <p className="crumb">{visita.unidad_medica}</p>
             <h3>{visita.unidad_medica_nombre}</h3>
           </div>
-          <button className="btn-ghost" onClick={onCerrar}>Cerrar</button>
+          <button className="btn-ghost" onClick={cerrarConResumen}>Cerrar</button>
         </div>
 
         {error && <p className="login-error">{error}</p>}

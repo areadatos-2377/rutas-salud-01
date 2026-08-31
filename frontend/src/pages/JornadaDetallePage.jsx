@@ -343,7 +343,20 @@ export default function JornadaDetallePage() {
       )}
 
       {visitaEvidencia && (
-        <EvidenciaPanel visita={visitaEvidencia} onCerrar={() => setVisitaEvidencia(null)} />
+        <EvidenciaPanel
+          visita={visitaEvidencia}
+          onCerrar={(resumen) => {
+            // Los marcadores de la fila (visitas del listado) vienen de una
+            // carga que ya paso -- sin esto, subir evidencia y cerrar el
+            // panel no los actualizaba hasta recargar toda la pagina.
+            if (resumen) {
+              setVisitas((actual) =>
+                actual.map((v) => (v.id === visitaEvidencia.id ? { ...v, ...resumen } : v)),
+              );
+            }
+            setVisitaEvidencia(null);
+          }}
+        />
       )}
       {vistaRapida && (
         <EvidenciaVistaRapida
