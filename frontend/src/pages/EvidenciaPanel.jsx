@@ -1,20 +1,24 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api, ApiError } from '../api/client';
 import './EvidenciaPanel.css';
 
-const TIPO_ICONO = { foto: '🖼️', video: '🎞️', pdf: '📄', documento: '📎' };
+// "documento" agrupa dos tipos del backend (pdf y documento, inferidos por
+// extension en entregas/storage.py) bajo una sola categoria de UI -- al
+// usuario le basta con "Documentos", no necesita saber que Word y PDF se
+// guardan con tipo distinto.
+const CATEGORIAS = [
+  { key: 'imagen', label: 'Imágenes', icono: '🖼️', accept: '.jpg,.jpeg,.png,.heic,.heif,.webp', tipos: ['foto'] },
+  { key: 'documento', label: 'Documentos', icono: '📄', accept: '.pdf,.doc,.docx', tipos: ['pdf', 'documento'] },
+  { key: 'video', label: 'Video', icono: '🎞️', accept: '.mp4,.mov', tipos: ['video'] },
+];
 
 export default function EvidenciaPanel({ visita, onCerrar }) {
   const [entrega, setEntrega] = useState(null);
   const [error, setError] = useState(null);
-  const [subiendo, setSubiendo] = useState(false);
+  const [subiendoCategoria, setSubiendoCategoria] = useState(null);
   const [guardandoEntregado, setGuardandoEntregado] = useState(false);
-  const inputArchivoRef = useRef(null);
 
   useEffect(() => {
-    // Perezoso: se crea (o se reusa si ya existia) justo al abrir el panel,
-    // no al precargar la unidad -- una jornada trae miles de unidades que
-    // nunca reciben entrega de verdad.
     api.post('/api/entregas/', { programacion_visita: visita.id })
       .then(setEntrega)
       .catch(() => setError('No se pudo abrir la entrega de esta unidad.'));
@@ -37,22 +41,24 @@ export default function EvidenciaPanel({ visita, onCerrar }) {
     }
   }
 
-  async function onSubirArchivo(e) {
-    const archivo = e.target.files?.[0];
-    if (!archivo) return;
-    setSubiendo(true);
+  async function onSubirArchivos(categoria, e) {
+    const archivos = Array.from(e.target.files || []);
+    if (archivos.length === 0) return;
+    setSubiendoCategoria(categoria.key);
     setError(null);
     try {
-      const formData = new FormData();
-      formData.append('file', archivo);
-      const evidencia = await api.post(`/api/entregas/${entrega.id}/evidencias/`, formData);
-      setEntrega((actual) => ({ ...actual, evidencias: [evidencia, ...actual.evidencias] }));
+      for (const archivo of archivos) {
+        const formData = new FormData();
+        formData.append('file', archivo);
+        const evidencia = await api.post(`/api/entregas/${entrega.id}/evidencias/`, formData);
+        setEntrega((actual) => ({ ...actual, evidencias: [evidencia, ...actual.evidencias] }));
+      }
     } catch (err) {
       const detalle = err instanceof ApiError && err.data ? err.data.detail : null;
-      setError(detalle || 'No se pudo subir el archivo.');
+      setError(detalle || 'No se pudo subir uno de los archivos.');
     } finally {
-      setSubiendo(false);
-      if (inputArchivoRef.current) inputArchivoRef.current.value = '';
+      setSubiendoCategoria(null);
+      e.target.value = '';
     }
   }
 
@@ -97,32 +103,43 @@ export default function EvidenciaPanel({ visita, onCerrar }) {
               Entregado{entrega.fecha_entrega ? ` — ${entrega.fecha_entrega}` : ''}
             </label>
 
-            <div className="evidencia-panel__lista">
-              {entrega.evidencias.length === 0 && (
-                <p className="evidencia-panel__vacio">Todavía no hay evidencia subida.</p>
-              )}
-              {entrega.evidencias.map((ev) => (
-                <div key={ev.id} className="evidencia-item">
-                  <span className="evidencia-item__icono">{TIPO_ICONO[ev.tipo] || '📎'}</span>
-                  <div className="evidencia-item__info">
-                    <a href={ev.url_descarga} target="_blank" rel="noreferrer">{ev.nombre_original}</a>
-                    <span>{new Date(ev.creado_en).toLocaleString('es-MX')}</span>
-                  </div>
-                  <button className="btn-ghost" onClick={() => onEliminarEvidencia(ev.id)}>Eliminar</button>
-                </div>
-              ))}
-            </div>
+            {CATEGORIAS.map((categoria) => {
+              const evidenciasCategoria = entrega.evidencias.filter((ev) => categoria.tipos.includes(ev.tipo));
+              const subiendo = subiendoCategoria === categoria.key;
+              return (
+                <div key={categoria.key} className="evidencia-categoria">
+                  <h4 className="evidencia-categoria__titulo">
+                    <span aria-hidden="true">{categoria.icono}</span> {categoria.label}
+                  </h4>
 
-            <div className="evidencia-panel__subir">
-              <input
-                ref={inputArchivoRef}
-                type="file"
-                accept=".jpg,.jpeg,.png,.heic,.heif,.webp,.mp4,.mov,.pdf,.doc,.docx"
-                disabled={subiendo}
-                onChange={onSubirArchivo}
-              />
-              {subiendo && <span className="evidencia-panel__subiendo">Subiendo…</span>}
-            </div>
+                  <div className="evidencia-panel__lista">
+                    {evidenciasCategoria.length === 0 && (
+                      <p className="evidencia-panel__vacio">Todavía no hay {categoria.label.toLowerCase()}.</p>
+                    )}
+                    {evidenciasCategoria.map((ev) => (
+                      <div key={ev.id} className="evidencia-item">
+                        <div className="evidencia-item__info">
+                          <a href={ev.url_descarga} target="_blank" rel="noreferrer">{ev.nombre_original}</a>
+                          <span>{new Date(ev.creado_en).toLocaleString('es-MX')}</span>
+                        </div>
+                        <button className="btn-ghost" onClick={() => onEliminarEvidencia(ev.id)}>Eliminar</button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="evidencia-panel__subir">
+                    <input
+                      type="file"
+                      multiple
+                      accept={categoria.accept}
+                      disabled={subiendo}
+                      onChange={(e) => onSubirArchivos(categoria, e)}
+                    />
+                    {subiendo && <span className="evidencia-panel__subiendo">Subiendo…</span>}
+                  </div>
+                </div>
+              );
+            })}
           </>
         )}
       </div>

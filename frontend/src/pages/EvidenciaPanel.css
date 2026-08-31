@@ -52,6 +52,22 @@
   height: 16px;
 }
 
+.evidencia-categoria {
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+.evidencia-categoria:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+.evidencia-categoria__titulo {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0 0 10px;
+}
+
 .evidencia-panel__lista {
   display: flex;
   flex-direction: column;
@@ -72,9 +88,6 @@
   padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-}
-.evidencia-item__icono {
-  font-size: 18px;
 }
 .evidencia-item__info {
   flex: 1;
@@ -100,8 +113,6 @@
 }
 
 .evidencia-panel__subir {
-  border-top: 1px solid var(--border);
-  padding-top: 14px;
   display: flex;
   align-items: center;
   gap: 10px;

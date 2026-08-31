@@ -78,6 +78,12 @@ class ProgramacionVisitaSerializer(serializers.ModelSerializer):
     unidad_medica_nivel = serializers.CharField(
         source="unidad_medica.nivel_atencion", read_only=True
     )
+    # Anotados en ProgramacionVisitaViewSet.get_queryset() (Exists subqueries
+    # sobre EvidenciaArchivo) -- para pintar los marcadores de evidencia en la
+    # tabla sin una consulta aparte por fila.
+    tiene_evidencia_imagen = serializers.BooleanField(read_only=True)
+    tiene_evidencia_documento = serializers.BooleanField(read_only=True)
+    tiene_evidencia_video = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = ProgramacionVisita
@@ -101,6 +107,9 @@ class ProgramacionVisitaSerializer(serializers.ModelSerializer):
             "telefono",
             "correo",
             "bloqueada",
+            "tiene_evidencia_imagen",
+            "tiene_evidencia_documento",
+            "tiene_evidencia_video",
         ]
         # tipo_unidad_medica viene del catalogo (UnidadMedica.tipo_unidad_medica)
         # al precargarse -- no debe poder editarse a mano y desincronizarse.

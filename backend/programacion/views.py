@@ -1,7 +1,9 @@
 from django.db import transaction
+from django.db.models import Exists, OuterRef
 from rest_framework import permissions, serializers, viewsets
 
 from catalogos.models import UnidadMedica
+from entregas.models import EvidenciaArchivo
 from usuarios.models import Usuario
 from usuarios.permissions import PuedeGestionarJornadas, PuedeGestionarProgramacion
 
@@ -59,9 +61,27 @@ class RutaViewSet(viewsets.ModelViewSet):
             serializer.save()
 
 class ProgramacionVisitaViewSet(viewsets.ModelViewSet):
-    queryset = ProgramacionVisita.objects.select_related(
-        "jornada", "ruta", "unidad_medica__entidad"
-    ).all()
+    queryset = (
+        ProgramacionVisita.objects.select_related("jornada", "ruta", "unidad_medica__entidad")
+        .annotate(
+            tiene_evidencia_imagen=Exists(
+                EvidenciaArchivo.objects.filter(
+                    entrega__programacion_visita=OuterRef("pk"), tipo="foto"
+                )
+            ),
+            tiene_evidencia_documento=Exists(
+                EvidenciaArchivo.objects.filter(
+                    entrega__programacion_visita=OuterRef("pk"), tipo__in=["pdf", "documento"]
+                )
+            ),
+            tiene_evidencia_video=Exists(
+                EvidenciaArchivo.objects.filter(
+                    entrega__programacion_visita=OuterRef("pk"), tipo="video"
+                )
+            ),
+        )
+        .all()
+    )
     serializer_class = ProgramacionVisitaSerializer
     permission_classes = [permissions.IsAuthenticated, PuedeGestionarProgramacion]
     http_method_names = ["get", "patch", "delete", "head", "options"]

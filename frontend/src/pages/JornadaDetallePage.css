@@ -158,6 +158,24 @@
 .jornada-acciones .btn-ghost + .btn-ghost {
   margin-left: 6px;
 }
+.jornada-marcador {
+  height: 28px;
+  width: 28px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+.jornada-marcador:hover {
+  background: #f4f1ea;
+}
+.jornada-marcador + .jornada-marcador,
+.jornada-marcador + .btn-ghost {
+  margin-left: 6px;
+}
 
 @media (max-width: 760px) {
   .jornada-meta {
@@ -179,5 +197,9 @@
   .jornada-acciones .btn-ghost {
     height: 36px;
     padding: 0 12px;
+  }
+  .jornada-marcador {
+    height: 36px;
+    width: 36px;
   }
 }

@@ -5,6 +5,7 @@ import { useAuth, ROLES } from '../auth/AuthContext';
 import { CATEGORIA_LABEL } from '../utils/categoriaNiveles';
 import { exportarProgramacionExcel } from '../utils/exportarProgramacionExcel';
 import EvidenciaPanel from './EvidenciaPanel';
+import EvidenciaVistaRapida from './EvidenciaVistaRapida';
 import '../styles/table.css';
 import './JornadaDetallePage.css';
 
@@ -44,6 +45,7 @@ export default function JornadaDetallePage() {
   const [errorEdicion, setErrorEdicion] = useState(null);
   const [exportando, setExportando] = useState(false);
   const [visitaEvidencia, setVisitaEvidencia] = useState(null);
+  const [vistaRapida, setVistaRapida] = useState(null);
 
   useEffect(() => {
     api.get(`/api/jornadas/${id}/`)
@@ -297,7 +299,36 @@ export default function JornadaDetallePage() {
                         {/* Evidencia solo tiene sentido si ya hay algo capturado -- no en
                             las miles de filas precargadas todavia vacias. */}
                         {(visita.ruta_numero || visita.fecha_distribucion_programada) && (
-                          <button className="btn-ghost" onClick={() => setVisitaEvidencia(visita)}>Evidencia</button>
+                          <>
+                            {visita.tiene_evidencia_imagen && (
+                              <button
+                                className="jornada-marcador"
+                                title="Ver imágenes subidas"
+                                onClick={() => setVistaRapida({ visita, categoria: 'imagen' })}
+                              >
+                                🖼️
+                              </button>
+                            )}
+                            {visita.tiene_evidencia_documento && (
+                              <button
+                                className="jornada-marcador"
+                                title="Ver documentos subidos"
+                                onClick={() => setVistaRapida({ visita, categoria: 'documento' })}
+                              >
+                                📄
+                              </button>
+                            )}
+                            {visita.tiene_evidencia_video && (
+                              <button
+                                className="jornada-marcador"
+                                title="Ver video subido"
+                                onClick={() => setVistaRapida({ visita, categoria: 'video' })}
+                              >
+                                🎞️
+                              </button>
+                            )}
+                            <button className="btn-ghost" onClick={() => setVisitaEvidencia(visita)}>Evidencia</button>
+                          </>
                         )}
                         <button className="btn-ghost" onClick={() => onEditar(visita)}>Editar</button>
                         <button className="btn-ghost" onClick={() => onEliminar(visita)}>Eliminar</button>
@@ -313,6 +344,13 @@ export default function JornadaDetallePage() {
 
       {visitaEvidencia && (
         <EvidenciaPanel visita={visitaEvidencia} onCerrar={() => setVisitaEvidencia(null)} />
+      )}
+      {vistaRapida && (
+        <EvidenciaVistaRapida
+          visita={vistaRapida.visita}
+          categoria={vistaRapida.categoria}
+          onCerrar={() => setVistaRapida(null)}
+        />
       )}
     </div>
   );
