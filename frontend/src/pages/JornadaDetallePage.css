@@ -89,6 +89,56 @@
 .jornada-tabla td {
   padding: 10px 12px;
 }
+
+/* CLUES fija al hacer scroll horizontal -- con 13 columnas hay que poder
+   ver de que unidad se trata sin perderla de vista al scrollear hacia
+   Ruta/Fecha/Piezas/etc. (Nombre se queda sin fijar: es texto largo y
+   variable, y sumarla a la zona fija dejaba muy poco ancho libre en
+   pantallas de celular para ver el resto de las columnas). */
+.jornada-tabla th:nth-child(1),
+.jornada-tabla td:nth-child(1) {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  width: 140px;
+  min-width: 140px;
+  max-width: 140px;
+  background: var(--paper);
+  box-shadow: 1px 0 0 var(--border);
+}
+.jornada-tabla thead th:nth-child(1) {
+  z-index: 2;
+  background: #fcfbf8;
+}
+.jornada-tabla tbody tr:hover td:nth-child(1) {
+  background: #fcfbf8;
+}
+.jornada-tabla tr.fila-editando td:nth-child(1) {
+  background: var(--guinda-pale-bg);
+}
+
+/* Acciones (Editar/Evidencia/Eliminar) fija a la derecha -- son 3 botones
+   angostos, y aun con scroll al maximo la zona fija de la izquierda se
+   los sigue tapando parcialmente. Fijandola aparte, se puede actuar sobre
+   una fila sin tener que scrollear las 13 columnas para llegar a ella. */
+.jornada-tabla th:last-child,
+.jornada-tabla td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  background: var(--paper);
+  box-shadow: -1px 0 0 var(--border);
+}
+.jornada-tabla thead th:last-child {
+  z-index: 2;
+  background: #fcfbf8;
+}
+.jornada-tabla tbody tr:hover td:last-child {
+  background: #fcfbf8;
+}
+.jornada-tabla tr.fila-editando td:last-child {
+  background: var(--guinda-pale-bg);
+}
 .jornada-tabla .fila-editando {
   background: var(--guinda-pale-bg);
 }
@@ -125,5 +175,9 @@
   .jornada-conteo {
     margin: 0;
     white-space: normal;
+  }
+  .jornada-acciones .btn-ghost {
+    height: 36px;
+    padding: 0 12px;
   }
 }
