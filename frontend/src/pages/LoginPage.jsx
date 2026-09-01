@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { LockKeyhole, Mail } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { ApiError } from '../api/client';
@@ -34,42 +35,60 @@ export default function LoginPage() {
 
   return (
     <div className="login-page">
-      <form className="login-card" onSubmit={onSubmit}>
-        <div className="login-mark">R</div>
-        <h1>Rutas de la salud</h1>
-        <p className="login-sub">Programación y seguimiento de distribución · IMSS-Bienestar</p>
+      <form className="login-card login-card--signin" onSubmit={onSubmit}>
+        <header className="login-heading">
+          <div className="login-logo" aria-label="IMSS Bienestar, Servicios Públicos de Salud">
+            <img src="/logos/logo_rutas.png" alt="" />
+          </div>
+          <h1>Rutas de la salud</h1>
+          <p className="login-sub">Acceso con usuario autorizado</p>
+        </header>
 
         {sesionExpirada && (
           <p className="login-error">Tu sesión expiró. Vuelve a iniciar sesión para continuar.</p>
         )}
 
-        <div className="field">
-          <label htmlFor="username">Usuario</label>
-          <input
-            id="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            autoComplete="username"
-            required
-          />
+        <div className="field login-field">
+          <label htmlFor="username">Correo electrónico o usuario</label>
+          <div className="login-input">
+            <Mail aria-hidden="true" size={18} strokeWidth={1.7} />
+            <input
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              autoComplete="username"
+              placeholder="correo@imssbienestar.gob.mx o usuario"
+              required
+            />
+          </div>
         </div>
-        <div className="field">
+        <div className="field login-field">
           <label htmlFor="password">Contraseña</label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-            required
-          />
+          <div className="login-input">
+            <LockKeyhole aria-hidden="true" size={18} strokeWidth={1.7} />
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              placeholder="Ingresa tu contraseña"
+              required
+            />
+          </div>
         </div>
 
         {error && <p className="login-error">{error}</p>}
 
         <button className="btn-primary login-submit" type="submit" disabled={enviando}>
-          {enviando ? 'Entrando…' : 'Entrar'}
+          {enviando ? 'Ingresando…' : 'Iniciar sesión'}
         </button>
+
+        <footer className="login-footer">
+          <span>IMSS Bienestar</span>
+          <span aria-hidden="true">·</span>
+          <span>Servicios Públicos de Salud</span>
+        </footer>
       </form>
     </div>
   );

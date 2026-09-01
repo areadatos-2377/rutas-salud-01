@@ -15,19 +15,11 @@
   padding: 24px 20px 18px;
   border-bottom: 1px solid var(--border);
 }
-.brand .mark {
-  width: 30px;
-  height: 30px;
-  border-radius: 7px;
-  background: var(--guinda);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 15px;
-  margin-bottom: 12px;
+.brand-logo {
+  display: block;
+  width: 184px;
+  height: auto;
+  margin-bottom: 16px;
 }
 .brand h1 {
   font-family: var(--font-display);
@@ -164,11 +156,12 @@
     border-bottom: 1px solid var(--border);
   }
   .brand {
-    padding: 12px 14px 8px;
+    padding: 12px 14px 10px;
     border-bottom: 0;
   }
-  .brand .mark {
-    display: none;
+  .brand-logo {
+    width: 154px;
+    margin-bottom: 6px;
   }
   .brand h1 {
     font-size: 15px;

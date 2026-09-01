@@ -51,7 +51,11 @@ export default function Shell() {
     <div className="shell">
       <aside className="sidebar">
         <div className="brand">
-          <div className="mark">R</div>
+          <img
+            className="brand-logo"
+            src="/logos/logohorizontal1.png"
+            alt="IMSS Bienestar, Servicios Públicos de Salud"
+          />
           <h1>Rutas de la salud</h1>
           <p>IMSS-Bienestar</p>
         </div>
