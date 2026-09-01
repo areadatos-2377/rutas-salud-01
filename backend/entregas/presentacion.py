@@ -140,12 +140,13 @@ def _llenar_diapositiva_contenido(diapositiva, entidad_nombre, dia_etiqueta, fot
                 _texto_leyenda(forma_texto, visita.unidad_medica.nombre, visita.unidad_medica_id)
                 agregada = True
             except Exception:
-                # Una foto que no se puede insertar (formato que Pillow no
-                # reconoce -- ej. HEIC subido antes de que se convirtiera
-                # automaticamente a JPEG al subir, o un archivo corrupto) no
-                # debe tumbar la presentacion completa -- se salta esa sola
-                # y se deja constancia en los logs para poder darle
-                # seguimiento (ver LOGGING en settings.py).
+                # Una foto que no se puede insertar (formato que python-pptx
+                # no acepta -- ej. HEIC/WEBP subidos antes de que se
+                # convirtieran automaticamente a JPEG al subir, ver
+                # storage.convertir_formato_no_soportado_si_aplica, o un
+                # archivo corrupto) no debe tumbar la presentacion completa
+                # -- se salta esa sola y se deja constancia en los logs para
+                # poder darle seguimiento (ver LOGGING en settings.py).
                 logger.warning(
                     "No se pudo insertar la evidencia id=%s (unidad %s) en la presentacion",
                     evidencia.id, visita.unidad_medica_id, exc_info=True,

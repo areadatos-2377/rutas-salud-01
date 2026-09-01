@@ -74,7 +74,7 @@ class EntregaViewSet(viewsets.ModelViewSet):
         if archivo.size > storage.MAX_EVIDENCIA_BYTES:
             return Response({"detail": "El archivo excede el límite de 15MB."}, status=400)
 
-        archivo, nombre_archivo = storage.convertir_heic_si_aplica(archivo, archivo.name)
+        archivo, nombre_archivo = storage.convertir_formato_no_soportado_si_aplica(archivo, archivo.name)
         ext = storage.extension(nombre_archivo)
 
         key = storage.construir_key(entrega, nombre_archivo)
