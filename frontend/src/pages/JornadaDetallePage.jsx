@@ -4,7 +4,6 @@ import { api, ApiError } from '../api/client';
 import { useAuth, ROLES } from '../auth/AuthContext';
 import { CATEGORIA_LABEL } from '../utils/categoriaNiveles';
 import { exportarProgramacionExcel } from '../utils/exportarProgramacionExcel';
-import { exportarPresentacionEvidencia } from '../utils/exportarPresentacionEvidencia';
 import EvidenciaPanel from './EvidenciaPanel';
 import EvidenciaVistaRapida from './EvidenciaVistaRapida';
 import '../styles/table.css';
@@ -217,7 +216,22 @@ export default function JornadaDetallePage() {
     setGenerandoPresentacion(true);
     setError(null);
     try {
-      await exportarPresentacionEvidencia({ jornada, fotos: Object.values(fotosSeleccionadas) });
+      const fotos = Object.entries(fotosSeleccionadas).map(([visitaId, foto]) => ({
+        visita_id: Number(visitaId),
+        evidencia_id: foto.evidenciaId,
+      }));
+      const { blob, nombreArchivo } = await api.postArchivo('/api/entregas/generar-presentacion/', {
+        jornada_id: jornada.id,
+        fotos,
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = nombreArchivo;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
       setFotosSeleccionadas({});
       setModoSeleccion(false);
     } catch {

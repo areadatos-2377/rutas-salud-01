@@ -88,3 +88,12 @@ def generar_url_descarga(key: str, expira_segundos: int = 300) -> str:
 def eliminar_evidencia(key: str) -> None:
     cliente = _cliente_s3()
     cliente.delete_object(Bucket=settings.STORAGE_BUCKET_NAME, Key=key)
+
+
+def descargar_evidencia(key: str) -> bytes:
+    """Trae el archivo completo a memoria -- para insertarlo en el .pptx de
+    evidencia (generar_url_descarga sirve para que el navegador lo pida
+    directo a R2, esto es para cuando el propio backend necesita los bytes)."""
+    cliente = _cliente_s3()
+    respuesta = cliente.get_object(Bucket=settings.STORAGE_BUCKET_NAME, Key=key)
+    return respuesta["Body"].read()
