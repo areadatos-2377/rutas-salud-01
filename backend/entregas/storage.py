@@ -12,6 +12,7 @@ este configurado -- solo estos endpoints fallarian.
 import unicodedata
 import uuid
 from datetime import date
+from io import BytesIO
 
 from django.conf import settings
 
@@ -52,6 +53,29 @@ def _nombre_seguro(nombre: str) -> str:
 
 def extension(nombre_archivo: str) -> str:
     return "." + nombre_archivo.rsplit(".", 1)[-1].lower() if "." in nombre_archivo else ""
+
+
+def convertir_heic_si_aplica(archivo, nombre_archivo: str):
+    """HEIC/HEIF (el formato por default de fotos en iPhone) no lo puede
+    mostrar el navegador en un <img> (solo Safari) ni leerlo Pillow sin un
+    plugin -- se convierte a JPEG aqui, al subir, una sola vez, para que la
+    foto funcione despues en todos lados (vista previa, presentacion) sin
+    tener que resolver esto en cada lugar donde se usa la imagen. Si el
+    archivo no es HEIC, regresa lo mismo sin tocar."""
+    if extension(nombre_archivo) not in (".heic", ".heif"):
+        return archivo, nombre_archivo
+
+    import pillow_heif
+    from PIL import Image
+
+    pillow_heif.register_heif_opener()
+    imagen = Image.open(archivo).convert("RGB")
+    salida = BytesIO()
+    imagen.save(salida, format="JPEG", quality=88)
+    salida.seek(0)
+    salida.content_type = "image/jpeg"
+    nombre_nuevo = nombre_archivo.rsplit(".", 1)[0] + ".jpg"
+    return salida, nombre_nuevo
 
 
 def construir_key(entrega, nombre_archivo: str) -> str:

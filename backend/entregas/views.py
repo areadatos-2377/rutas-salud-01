@@ -68,19 +68,22 @@ class EntregaViewSet(viewsets.ModelViewSet):
         if archivo is None:
             return Response({"detail": "No se envió ningún archivo."}, status=400)
 
-        ext = storage.extension(archivo.name)
-        if ext not in storage.EXTENSION_A_TIPO:
+        ext_original = storage.extension(archivo.name)
+        if ext_original not in storage.EXTENSION_A_TIPO:
             return Response({"detail": "Tipo de archivo no permitido."}, status=400)
         if archivo.size > storage.MAX_EVIDENCIA_BYTES:
             return Response({"detail": "El archivo excede el límite de 15MB."}, status=400)
 
-        key = storage.construir_key(entrega, archivo.name)
+        archivo, nombre_archivo = storage.convertir_heic_si_aplica(archivo, archivo.name)
+        ext = storage.extension(nombre_archivo)
+
+        key = storage.construir_key(entrega, nombre_archivo)
         storage.subir_evidencia(archivo, key)
         evidencia = EvidenciaArchivo.objects.create(
             entrega=entrega,
             tipo=storage.EXTENSION_A_TIPO[ext],
             ruta_almacen=key,
-            nombre_original=archivo.name,
+            nombre_original=nombre_archivo,
             subido_por=request.user,
         )
         return Response(EvidenciaArchivoSerializer(evidencia).data, status=201)

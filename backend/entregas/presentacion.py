@@ -16,6 +16,7 @@ XML de una forma no copia sus relaciones.
 
 import copy
 import io
+import logging
 from pathlib import Path
 
 from pptx import Presentation
@@ -23,6 +24,8 @@ from pptx.opc.constants import RELATIONSHIP_TYPE as RT
 
 from . import storage
 from .regiones import orden_regiones, region_de
+
+logger = logging.getLogger(__name__)
 
 RUTA_PLANTILLA = Path(__file__).resolve().parent / "plantillas" / "Formato_rutas.pptx"
 
@@ -126,14 +129,28 @@ def _llenar_diapositiva_contenido(diapositiva, entidad_nombre, dia_etiqueta, fot
 
     for i, (posicion, id_texto) in enumerate(_SLOTS_FOTO):
         forma_texto = _forma_por_id(diapositiva, id_texto)
+        agregada = False
         if i < len(fotos):
             visita = fotos[i]["visita"]
             evidencia = fotos[i]["evidencia"]
-            bytes_imagen = storage.descargar_evidencia(evidencia.ruta_almacen)
-            left, top, ancho, alto = posicion
-            diapositiva.shapes.add_picture(io.BytesIO(bytes_imagen), left, top, ancho, alto)
-            _texto_leyenda(forma_texto, visita.unidad_medica.nombre, visita.unidad_medica_id)
-        else:
+            try:
+                bytes_imagen = storage.descargar_evidencia(evidencia.ruta_almacen)
+                left, top, ancho, alto = posicion
+                diapositiva.shapes.add_picture(io.BytesIO(bytes_imagen), left, top, ancho, alto)
+                _texto_leyenda(forma_texto, visita.unidad_medica.nombre, visita.unidad_medica_id)
+                agregada = True
+            except Exception:
+                # Una foto que no se puede insertar (formato que Pillow no
+                # reconoce -- ej. HEIC subido antes de que se convirtiera
+                # automaticamente a JPEG al subir, o un archivo corrupto) no
+                # debe tumbar la presentacion completa -- se salta esa sola
+                # y se deja constancia en los logs para poder darle
+                # seguimiento (ver LOGGING en settings.py).
+                logger.warning(
+                    "No se pudo insertar la evidencia id=%s (unidad %s) en la presentacion",
+                    evidencia.id, visita.unidad_medica_id, exc_info=True,
+                )
+        if not agregada:
             forma_texto._element.getparent().remove(forma_texto._element)
 
 
