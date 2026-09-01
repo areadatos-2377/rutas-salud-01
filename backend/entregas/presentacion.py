@@ -20,7 +20,6 @@ from pathlib import Path
 
 from pptx import Presentation
 from pptx.opc.constants import RELATIONSHIP_TYPE as RT
-from pptx.oxml.ns import qn
 
 from . import storage
 from .regiones import orden_regiones, region_de
@@ -29,17 +28,28 @@ RUTA_PLANTILLA = Path(__file__).resolve().parent / "plantillas" / "Formato_rutas
 
 _NS_REL = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
 
-# IDs de forma (p:cNvPr id=) en la diapositiva 3 de la plantilla -- cada
-# tupla es (rectangulo con la foto, cuadro de texto con la leyenda), en el
-# orden en que se deben llenar. Confirmados abriendo la plantilla con
-# python-pptx antes de escribir este archivo (ver el plan).
-_SLOTS_FOTO = [
-    (24, 2), (26, 25), (28, 27), (30, 29),
-    (32, 31), (34, 33), (36, 35), (38, 37),
-]
+# La plantilla original traia 8 rectangulos con foto de muestra (uno por
+# slot) -- se quitaron porque solo eran de muestra y pesaban mucho. Ya no
+# hay una forma que rellenar; se inserta una Picture nueva en la posicion
+# exacta donde estaba cada rectangulo (medidas EMU tomadas de la plantilla
+# original antes de que se quitaran, ver el plan). Cada posicion va
+# emparejada con el id del cuadro de texto de su leyenda, que si sigue
+# existiendo.
+_ANCHO_FOTO = 2340000
+_ALTO_FOTO = 2340000
+_COLUMNAS_X = [874205, 3394298, 5914391, 8434484]
+_FILAS_Y = [768534, 3832995]
+_IDS_LEYENDA = [2, 25, 27, 29, 31, 33, 35, 37]
+_POSICIONES_FOTO = [(x, y, _ANCHO_FOTO, _ALTO_FOTO) for y in _FILAS_Y for x in _COLUMNAS_X]
+_SLOTS_FOTO = list(zip(_POSICIONES_FOTO, _IDS_LEYENDA))
+
 _ID_TITULO_ENTIDAD = 9
 _ID_DIA_CONTENIDO = 11
-_ID_DIA_PORTADA = 3
+# Antes del ajuste que le hizo el usuario a la plantilla, la portada usaba
+# un layout distinto y el texto de dia era el shape id=3. Ahora la
+# portada comparte layout con la diapositiva de region y el id=3 quedo
+# libre para el titulo -- el texto de dia se recorrio a id=4.
+_ID_DIA_PORTADA = 4
 _ID_TITULO_REGION = 2
 
 
@@ -110,27 +120,20 @@ def _duplicar_diapositiva(prs, diapositiva_origen):
     return nueva
 
 
-def _reemplazar_foto(forma_rect, bytes_imagen, parte_diapositiva):
-    image_part, rid = parte_diapositiva.get_or_add_image_part(io.BytesIO(bytes_imagen))
-    blip = forma_rect._element.spPr.find(qn("a:blipFill")).find(qn("a:blip"))
-    blip.set(qn("r:embed"), rid)
-
-
 def _llenar_diapositiva_contenido(diapositiva, entidad_nombre, dia_etiqueta, fotos):
     _texto_forma(_forma_por_id(diapositiva, _ID_TITULO_ENTIDAD), entidad_nombre.title())
     _texto_forma(_forma_por_id(diapositiva, _ID_DIA_CONTENIDO), dia_etiqueta)
 
-    for i, (id_rect, id_texto) in enumerate(_SLOTS_FOTO):
-        forma_rect = _forma_por_id(diapositiva, id_rect)
+    for i, (posicion, id_texto) in enumerate(_SLOTS_FOTO):
         forma_texto = _forma_por_id(diapositiva, id_texto)
         if i < len(fotos):
             visita = fotos[i]["visita"]
             evidencia = fotos[i]["evidencia"]
             bytes_imagen = storage.descargar_evidencia(evidencia.ruta_almacen)
-            _reemplazar_foto(forma_rect, bytes_imagen, diapositiva.part)
+            left, top, ancho, alto = posicion
+            diapositiva.shapes.add_picture(io.BytesIO(bytes_imagen), left, top, ancho, alto)
             _texto_leyenda(forma_texto, visita.unidad_medica.nombre, visita.unidad_medica_id)
         else:
-            forma_rect._element.getparent().remove(forma_rect._element)
             forma_texto._element.getparent().remove(forma_texto._element)
 
 
