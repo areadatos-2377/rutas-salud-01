@@ -12,6 +12,7 @@ este configurado -- solo estos endpoints fallarian.
 import unicodedata
 import uuid
 from datetime import date
+from io import BytesIO
 
 from django.conf import settings
 
@@ -54,6 +55,41 @@ def extension(nombre_archivo: str) -> str:
     return "." + nombre_archivo.rsplit(".", 1)[-1].lower() if "." in nombre_archivo else ""
 
 
+# JPG/PNG los acepta python-pptx directo (ext_map de
+# pptx/parts/image.py). Cualquier otro formato de imagen que se acepte
+# subir -- HEIC/HEIF (Pillow no los puede ni abrir sin el plugin) y
+# tambien WEBP (Pillow SI lo abre, pero python-pptx lo rechaza igual:
+# "unsupported image format, expected one of: BMP, GIF, JPEG, PNG,
+# TIFF, WMF" -- limite propio de python-pptx, no de Pillow) -- se
+# convierte a JPEG.
+_EXTENSIONES_IMAGEN_SEGURAS = {".jpg", ".jpeg", ".png"}
+
+
+def convertir_formato_no_soportado_si_aplica(archivo, nombre_archivo: str):
+    """Convierte a JPEG cualquier imagen subida en un formato que
+    python-pptx no acepte insertar en una diapositiva (ver arriba) --
+    una sola vez, al subir, para que la foto funcione despues en todos
+    lados (vista previa, presentacion) sin tener que resolver esto en
+    cada lugar donde se usa la imagen. Si ya es JPG/PNG, regresa lo
+    mismo sin tocar."""
+    if extension(nombre_archivo) in _EXTENSIONES_IMAGEN_SEGURAS:
+        return archivo, nombre_archivo
+
+    import pillow_heif
+    from PIL import Image
+
+    # No-op si el archivo no es HEIC/HEIF -- solo le enseña a Pillow a
+    # abrir ese formato tambien, no afecta la lectura de otros.
+    pillow_heif.register_heif_opener()
+    imagen = Image.open(archivo).convert("RGB")
+    salida = BytesIO()
+    imagen.save(salida, format="JPEG", quality=88)
+    salida.seek(0)
+    salida.content_type = "image/jpeg"
+    nombre_nuevo = nombre_archivo.rsplit(".", 1)[0] + ".jpg"
+    return salida, nombre_nuevo
+
+
 def construir_key(entrega, nombre_archivo: str) -> str:
     """Distribucion / Entidad / Dia / Unidad -- estructura acordada para que
     el bucket sea navegable/descargable con ese orden desde fuera."""
@@ -88,3 +124,12 @@ def generar_url_descarga(key: str, expira_segundos: int = 300) -> str:
 def eliminar_evidencia(key: str) -> None:
     cliente = _cliente_s3()
     cliente.delete_object(Bucket=settings.STORAGE_BUCKET_NAME, Key=key)
+
+
+def descargar_evidencia(key: str) -> bytes:
+    """Trae el archivo completo a memoria -- para insertarlo en el .pptx de
+    evidencia (generar_url_descarga sirve para que el navegador lo pida
+    directo a R2, esto es para cuando el propio backend necesita los bytes)."""
+    cliente = _cliente_s3()
+    respuesta = cliente.get_object(Bucket=settings.STORAGE_BUCKET_NAME, Key=key)
+    return respuesta["Body"].read()

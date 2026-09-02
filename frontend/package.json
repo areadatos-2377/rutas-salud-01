@@ -15,7 +15,6 @@
     "express": "^5.2.1",
     "http-proxy-middleware": "^3.0.7",
     "lucide-react": "^1.38.0",
-    "pptxgenjs": "^4.0.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.2"
