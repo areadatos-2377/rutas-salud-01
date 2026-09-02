@@ -138,6 +138,8 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 # whitenoise: sirve el admin de Django (y cualquier estatico) directo desde
 # el proceso de gunicorn en Railway, sin necesitar nginx/CDN aparte.
 STORAGES = {
@@ -164,9 +166,9 @@ REST_FRAMEWORK = {
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5183")
 
 # Cloudflare R2 (compatible S3) para evidencia de entregas -- ver
-# entregas/storage.py y blueprint/setup-cloudflare-r2.md. Sin default de
-# credenciales (no hay uno seguro); si faltan, solo los endpoints de
-# evidencia fallan, el resto de la app sigue funcionando normal.
+# entregas/storage.py y blueprint/setup-cloudflare-r2.md. En desarrollo, si
+# faltan las tres credenciales, la evidencia se guarda en MEDIA_ROOT. En
+# producción R2 es obligatorio porque el disco del contenedor no es persistente.
 STORAGE_ENDPOINT_URL = os.environ.get("STORAGE_ENDPOINT_URL")
 STORAGE_ACCESS_KEY_ID = os.environ.get("STORAGE_ACCESS_KEY_ID")
 STORAGE_SECRET_ACCESS_KEY = os.environ.get("STORAGE_SECRET_ACCESS_KEY")

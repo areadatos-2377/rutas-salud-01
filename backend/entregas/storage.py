@@ -12,8 +12,11 @@ este configurado -- solo estos endpoints fallarian.
 import unicodedata
 import uuid
 from datetime import date
+from pathlib import Path
+from urllib.parse import quote
 
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 
 MAX_EVIDENCIA_BYTES = 15 * 1024 * 1024  # 15MB -- fotos de celular pesan mas que un PDF
 
@@ -30,9 +33,27 @@ EXTENSION_A_TIPO = {
 }
 
 
+def _configuracion_r2():
+    return (
+        settings.STORAGE_ENDPOINT_URL,
+        settings.STORAGE_ACCESS_KEY_ID,
+        settings.STORAGE_SECRET_ACCESS_KEY,
+    )
+
+
+def _usa_almacen_local():
+    return settings.DEBUG and not any(_configuracion_r2())
+
+
 def _cliente_s3():
     from botocore.client import Config
     import boto3
+
+    if not all(_configuracion_r2()):
+        raise ImproperlyConfigured(
+            "Configura STORAGE_ENDPOINT_URL, STORAGE_ACCESS_KEY_ID y "
+            "STORAGE_SECRET_ACCESS_KEY para usar el almacenamiento de evidencia."
+        )
 
     return boto3.client(
         "s3",
@@ -71,7 +92,24 @@ def construir_key(entrega, nombre_archivo: str) -> str:
     )
 
 
+def _ruta_local(key: str) -> Path:
+    raiz = Path(settings.MEDIA_ROOT).resolve()
+    ruta = (raiz / key).resolve()
+    if raiz not in ruta.parents:
+        raise ValueError("Ruta de evidencia no válida.")
+    return ruta
+
+
 def subir_evidencia(archivo, key: str) -> None:
+    if _usa_almacen_local():
+        ruta = _ruta_local(key)
+        ruta.parent.mkdir(parents=True, exist_ok=True)
+        with ruta.open("wb") as destino:
+            partes = archivo.chunks() if hasattr(archivo, "chunks") else iter(lambda: archivo.read(64 * 1024), b"")
+            for parte in partes:
+                destino.write(parte)
+        return
+
     cliente = _cliente_s3()
     cliente.upload_fileobj(
         archivo, settings.STORAGE_BUCKET_NAME, key,
@@ -80,6 +118,9 @@ def subir_evidencia(archivo, key: str) -> None:
 
 
 def generar_url_descarga(key: str, expira_segundos: int = 300) -> str:
+    if _usa_almacen_local():
+        return f"{settings.MEDIA_URL.rstrip('/')}/{quote(key, safe='/')}"
+
     cliente = _cliente_s3()
     return cliente.generate_presigned_url(
         "get_object",
@@ -89,6 +130,10 @@ def generar_url_descarga(key: str, expira_segundos: int = 300) -> str:
 
 
 def eliminar_evidencia(key: str) -> None:
+    if _usa_almacen_local():
+        _ruta_local(key).unlink(missing_ok=True)
+        return
+
     cliente = _cliente_s3()
     cliente.delete_object(Bucket=settings.STORAGE_BUCKET_NAME, Key=key)
 
@@ -97,6 +142,9 @@ def descargar_evidencia(key: str) -> bytes:
     """Trae el archivo completo a memoria -- para insertarlo en el .pptx de
     evidencia (generar_url_descarga sirve para que el navegador lo pida
     directo a R2, esto es para cuando el propio backend necesita los bytes)."""
+    if _usa_almacen_local():
+        return _ruta_local(key).read_bytes()
+
     cliente = _cliente_s3()
     respuesta = cliente.get_object(Bucket=settings.STORAGE_BUCKET_NAME, Key=key)
     return respuesta["Body"].read()

@@ -4,6 +4,12 @@ from .models import Entrega, EvidenciaArchivo
 from .storage import generar_url_descarga
 
 
+def _url_descarga(serializer, obj):
+    url = generar_url_descarga(obj.ruta_almacen)
+    request = serializer.context.get("request")
+    return request.build_absolute_uri(url) if request and url.startswith("/") else url
+
+
 class EvidenciaArchivoSerializer(serializers.ModelSerializer):
     # ruta_almacen (la key del objeto en R2) nunca se expone -- mismo patron
     # que legacy/referencia_almacenamiento_documentos.md: el frontend solo
@@ -16,7 +22,7 @@ class EvidenciaArchivoSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_url_descarga(self, obj):
-        return generar_url_descarga(obj.ruta_almacen)
+        return _url_descarga(self, obj)
 
 
 class EntregaSerializer(serializers.ModelSerializer):
@@ -57,4 +63,4 @@ class EvidenciaArchivoConsultaSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_url_descarga(self, obj):
-        return generar_url_descarga(obj.ruta_almacen)
+        return _url_descarga(self, obj)

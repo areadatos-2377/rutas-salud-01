@@ -59,7 +59,7 @@ class EntregaViewSet(viewsets.ModelViewSet):
             programacion_visita=visita, defaults={"usuario": usuario}
         )
         status_code = status.HTTP_201_CREATED if creada else status.HTTP_200_OK
-        return Response(EntregaSerializer(entrega).data, status=status_code)
+        return Response(self.get_serializer(entrega).data, status=status_code)
 
     @action(detail=True, methods=["post"], url_path="evidencias")
     def subir_evidencia(self, request, pk=None):
@@ -86,7 +86,10 @@ class EntregaViewSet(viewsets.ModelViewSet):
             nombre_original=archivo.name,
             subido_por=request.user,
         )
-        return Response(EvidenciaArchivoSerializer(evidencia).data, status=201)
+        return Response(
+            EvidenciaArchivoSerializer(evidencia, context=self.get_serializer_context()).data,
+            status=201,
+        )
 
 
 class EvidenciaArchivoViewSet(viewsets.ModelViewSet):
