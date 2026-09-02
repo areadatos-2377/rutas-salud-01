@@ -21,6 +21,7 @@ from pathlib import Path
 
 from pptx import Presentation
 from pptx.opc.constants import RELATIONSHIP_TYPE as RT
+from pptx.util import Pt
 
 from . import storage
 from .regiones import orden_regiones, region_de
@@ -53,6 +54,7 @@ _ID_DIA_CONTENIDO = 11
 # portada comparte layout con la diapositiva de region y el id=3 quedo
 # libre para el titulo -- el texto de dia se recorrio a id=4.
 _ID_DIA_PORTADA = 4
+_ID_TITULO_PORTADA = 3
 _ID_TITULO_REGION = 2
 
 
@@ -68,6 +70,29 @@ def _texto_forma(forma, texto_nuevo):
         run_extra.text = ""
 
 
+def _texto_subtitulo_portada(forma, texto_nuevo):
+    """El titulo de la portada trae 'Evidencia fotografica' y el subtitulo
+    de nivel de atencion en el MISMO parrafo, separados por un salto de
+    linea manual (<a:br/>) -- son 2 runs de un parrafo, no 2 parrafos. Solo
+    se cambia el segundo run (el subtitulo)."""
+    forma.text_frame.paragraphs[0].runs[1].text = texto_nuevo
+
+
+# El nombre de unidad varia mucho en longitud -- uno largo desborda la caja
+# de leyenda (2340000 x 432000 EMU, ~2-3 lineas) al tamano fijo de la
+# plantilla (9.5pt), asi que se reduce segun el largo del texto. El CLUES
+# siempre mide 10 caracteres, no necesita este ajuste.
+_UMBRALES_TAM_NOMBRE = [(30, Pt(9.5)), (45, Pt(8)), (60, Pt(7))]
+_TAM_LEYENDA_MINIMO = Pt(6)
+
+
+def _tam_fuente_nombre(nombre_unidad):
+    for maximo_caracteres, tamano in _UMBRALES_TAM_NOMBRE:
+        if len(nombre_unidad) <= maximo_caracteres:
+            return tamano
+    return _TAM_LEYENDA_MINIMO
+
+
 def _texto_leyenda(forma, nombre_unidad, clues):
     """La leyenda de cada foto son 2 parrafos separados en la plantilla
     (nombre de la unidad arriba, CLUES abajo) -- no una sola linea."""
@@ -78,6 +103,7 @@ def _texto_leyenda(forma, nombre_unidad, clues):
         parrafo.runs[0].text = texto
         for run_extra in parrafo.runs[1:]:
             run_extra.text = ""
+    parrafos[0].runs[0].font.size = _tam_fuente_nombre(nombre_unidad)
 
 
 def _forma_por_id(diapositiva, shape_id):
@@ -140,13 +166,12 @@ def _llenar_diapositiva_contenido(diapositiva, entidad_nombre, dia_etiqueta, fot
                 _texto_leyenda(forma_texto, visita.unidad_medica.nombre, visita.unidad_medica_id)
                 agregada = True
             except Exception:
-                # Una foto que no se puede insertar (formato que python-pptx
-                # no acepta -- ej. HEIC/WEBP subidos antes de que se
-                # convirtieran automaticamente a JPEG al subir, ver
-                # storage.convertir_formato_no_soportado_si_aplica, o un
-                # archivo corrupto) no debe tumbar la presentacion completa
-                # -- se salta esa sola y se deja constancia en los logs para
-                # poder darle seguimiento (ver LOGGING en settings.py).
+                # Una foto que no se puede insertar (evidencia subida antes
+                # de que WEBP/HEIC se rechazaran en la subida -- ver
+                # storage.EXTENSION_A_TIPO -- o un archivo corrupto) no debe
+                # tumbar la presentacion completa -- se salta esa sola y se
+                # deja constancia en los logs para poder darle seguimiento
+                # (ver LOGGING en settings.py).
                 logger.warning(
                     "No se pudo insertar la evidencia id=%s (unidad %s) en la presentacion",
                     evidencia.id, visita.unidad_medica_id, exc_info=True,
@@ -155,11 +180,15 @@ def _llenar_diapositiva_contenido(diapositiva, entidad_nombre, dia_etiqueta, fot
             forma_texto._element.getparent().remove(forma_texto._element)
 
 
-def construir_presentacion(dia_texto, fotos):
+def construir_presentacion(dia_texto, categoria_texto, fotos):
     """fotos: lista de {"visita": ProgramacionVisita, "evidencia": EvidenciaArchivo}
     (instancias de modelo reales -- ver views.py, ahi se valida y resuelve
-    cada una desde la base antes de llegar aqui). Regresa un BytesIO listo
-    para mandar como respuesta binaria."""
+    cada una desde la base antes de llegar aqui). categoria_texto es la
+    etiqueta legible de Jornada.categoria (jornada.get_categoria_display()),
+    "Primer nivel" o "Segundo y tercer nivel" -- va en el subtitulo de la
+    portada, que antes quedaba fijo en "primer nivel" sin importar la
+    categoria real de la distribucion. Regresa un BytesIO listo para mandar
+    como respuesta binaria."""
     prs = Presentation(str(RUTA_PLANTILLA))
     diapositiva_portada = prs.slides[0]
     diapositiva_region_base = prs.slides[1]
@@ -167,6 +196,10 @@ def construir_presentacion(dia_texto, fotos):
 
     dia_etiqueta = f"Día 1: {dia_texto}"
     _texto_forma(_forma_por_id(diapositiva_portada, _ID_DIA_PORTADA), dia_etiqueta)
+    _texto_subtitulo_portada(
+        _forma_por_id(diapositiva_portada, _ID_TITULO_PORTADA),
+        f"Distribución para {categoria_texto.lower()} de atención médica",
+    )
 
     # Region (orden fijo) -> entidad (orden alfabetico) -> fotos de esa entidad.
     por_region = {}
