@@ -21,6 +21,7 @@ from pathlib import Path
 
 from pptx import Presentation
 from pptx.opc.constants import RELATIONSHIP_TYPE as RT
+from pptx.util import Pt
 
 from . import storage
 from .regiones import orden_regiones, region_de
@@ -68,6 +69,21 @@ def _texto_forma(forma, texto_nuevo):
         run_extra.text = ""
 
 
+# El nombre de unidad varia mucho en longitud -- uno largo desborda la caja
+# de leyenda (2340000 x 432000 EMU, ~2-3 lineas) al tamano fijo de la
+# plantilla (9.5pt), asi que se reduce segun el largo del texto. El CLUES
+# siempre mide 10 caracteres, no necesita este ajuste.
+_UMBRALES_TAM_NOMBRE = [(30, Pt(9.5)), (45, Pt(8)), (60, Pt(7))]
+_TAM_LEYENDA_MINIMO = Pt(6)
+
+
+def _tam_fuente_nombre(nombre_unidad):
+    for maximo_caracteres, tamano in _UMBRALES_TAM_NOMBRE:
+        if len(nombre_unidad) <= maximo_caracteres:
+            return tamano
+    return _TAM_LEYENDA_MINIMO
+
+
 def _texto_leyenda(forma, nombre_unidad, clues):
     """La leyenda de cada foto son 2 parrafos separados en la plantilla
     (nombre de la unidad arriba, CLUES abajo) -- no una sola linea."""
@@ -78,6 +94,7 @@ def _texto_leyenda(forma, nombre_unidad, clues):
         parrafo.runs[0].text = texto
         for run_extra in parrafo.runs[1:]:
             run_extra.text = ""
+    parrafos[0].runs[0].font.size = _tam_fuente_nombre(nombre_unidad)
 
 
 def _forma_por_id(diapositiva, shape_id):
@@ -140,13 +157,12 @@ def _llenar_diapositiva_contenido(diapositiva, entidad_nombre, dia_etiqueta, fot
                 _texto_leyenda(forma_texto, visita.unidad_medica.nombre, visita.unidad_medica_id)
                 agregada = True
             except Exception:
-                # Una foto que no se puede insertar (formato que python-pptx
-                # no acepta -- ej. HEIC/WEBP subidos antes de que se
-                # convirtieran automaticamente a JPEG al subir, ver
-                # storage.convertir_formato_no_soportado_si_aplica, o un
-                # archivo corrupto) no debe tumbar la presentacion completa
-                # -- se salta esa sola y se deja constancia en los logs para
-                # poder darle seguimiento (ver LOGGING en settings.py).
+                # Una foto que no se puede insertar (evidencia subida antes
+                # de que WEBP/HEIC se rechazaran en la subida -- ver
+                # storage.EXTENSION_A_TIPO -- o un archivo corrupto) no debe
+                # tumbar la presentacion completa -- se salta esa sola y se
+                # deja constancia en los logs para poder darle seguimiento
+                # (ver LOGGING en settings.py).
                 logger.warning(
                     "No se pudo insertar la evidencia id=%s (unidad %s) en la presentacion",
                     evidencia.id, visita.unidad_medica_id, exc_info=True,
