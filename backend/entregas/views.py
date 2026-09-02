@@ -162,7 +162,7 @@ class GenerarPresentacionView(APIView):
             return Response({"detail": "Ninguna de las fotos enviadas es válida."}, status=400)
 
         dia_texto = _formato_fecha_es(jornada.fecha_inicio)
-        buffer = presentacion.construir_presentacion(dia_texto, fotos)
+        buffer = presentacion.construir_presentacion(dia_texto, jornada.get_categoria_display(), fotos)
 
         respuesta = HttpResponse(
             buffer.getvalue(),

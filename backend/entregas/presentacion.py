@@ -54,6 +54,7 @@ _ID_DIA_CONTENIDO = 11
 # portada comparte layout con la diapositiva de region y el id=3 quedo
 # libre para el titulo -- el texto de dia se recorrio a id=4.
 _ID_DIA_PORTADA = 4
+_ID_TITULO_PORTADA = 3
 _ID_TITULO_REGION = 2
 
 
@@ -67,6 +68,14 @@ def _texto_forma(forma, texto_nuevo):
     parrafo.runs[0].text = texto_nuevo
     for run_extra in parrafo.runs[1:]:
         run_extra.text = ""
+
+
+def _texto_subtitulo_portada(forma, texto_nuevo):
+    """El titulo de la portada trae 'Evidencia fotografica' y el subtitulo
+    de nivel de atencion en el MISMO parrafo, separados por un salto de
+    linea manual (<a:br/>) -- son 2 runs de un parrafo, no 2 parrafos. Solo
+    se cambia el segundo run (el subtitulo)."""
+    forma.text_frame.paragraphs[0].runs[1].text = texto_nuevo
 
 
 # El nombre de unidad varia mucho en longitud -- uno largo desborda la caja
@@ -171,11 +180,15 @@ def _llenar_diapositiva_contenido(diapositiva, entidad_nombre, dia_etiqueta, fot
             forma_texto._element.getparent().remove(forma_texto._element)
 
 
-def construir_presentacion(dia_texto, fotos):
+def construir_presentacion(dia_texto, categoria_texto, fotos):
     """fotos: lista de {"visita": ProgramacionVisita, "evidencia": EvidenciaArchivo}
     (instancias de modelo reales -- ver views.py, ahi se valida y resuelve
-    cada una desde la base antes de llegar aqui). Regresa un BytesIO listo
-    para mandar como respuesta binaria."""
+    cada una desde la base antes de llegar aqui). categoria_texto es la
+    etiqueta legible de Jornada.categoria (jornada.get_categoria_display()),
+    "Primer nivel" o "Segundo y tercer nivel" -- va en el subtitulo de la
+    portada, que antes quedaba fijo en "primer nivel" sin importar la
+    categoria real de la distribucion. Regresa un BytesIO listo para mandar
+    como respuesta binaria."""
     prs = Presentation(str(RUTA_PLANTILLA))
     diapositiva_portada = prs.slides[0]
     diapositiva_region_base = prs.slides[1]
@@ -183,6 +196,10 @@ def construir_presentacion(dia_texto, fotos):
 
     dia_etiqueta = f"Día 1: {dia_texto}"
     _texto_forma(_forma_por_id(diapositiva_portada, _ID_DIA_PORTADA), dia_etiqueta)
+    _texto_subtitulo_portada(
+        _forma_por_id(diapositiva_portada, _ID_TITULO_PORTADA),
+        f"Distribución para {categoria_texto.lower()} de atención médica",
+    )
 
     # Region (orden fijo) -> entidad (orden alfabetico) -> fotos de esa entidad.
     por_region = {}
